@@ -1,0 +1,93 @@
+.talentTreeHistory {
+    position: relative;
+    background-color: rgb(25, 25, 25);
+    padding: 20px;
+}
+
+.talentTreeHistory .talentTreeHistoryHeader {
+    color: white;
+    font-size: 24px;
+    font-weight: bolder;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin-bottom: 10px;
+}
+
+.talentTreeHistory .talentHistoryList {
+    position: relative;
+    display: flex;
+    flex-flow: column wrap;
+    background-color: rgb(25, 25, 25);
+    max-height: 400px;
+}
+
+@media only screen and (max-width: 1400px) {
+    .talentTreeHistory .talentHistoryList {
+        max-height: 500px;
+    }
+}
+
+@media only screen and (max-width: 1200px) {
+    .talentTreeHistory .talentHistoryList {
+        max-height: 600px;
+    }
+}
+
+@media only screen and (max-width: 1000px) {
+    .talentTreeHistory .talentHistoryList {
+        max-height: 900px;
+    }
+}
+
+@media only screen and (max-width: 600px) {
+    .talentTreeHistory .talentHistoryList {
+        max-height: 100000px;
+    }
+}
+
+.talentTreeHistory .talentHistory {
+    display: inline-block;
+    width: 300px;
+}
+
+.talentTreeHistory .talentHistory .talentAnchor {
+    cursor: pointer;
+}
+
+.talentTreeHistory .talentHistory .talentNumber {
+    display: inline-block;
+    color: white;
+    font-size: 14px;
+    position: relative;
+    margin-right: 5px;
+    overflow: hidden;
+}
+
+.talentTreeHistory .talentHistory .talentImg {
+    position: relative;
+    display: inline-block;
+    background-repeat: no-repeat;
+    background-size: cover;
+    width: 20px;
+    height: 20px;
+    margin-right: 5px;
+}
+
+.talentTreeHistory .talentHistory .talentName {
+    display: inline-block;
+    color: gold;
+    font-size: 14px;
+    position: relative;
+    margin-right: 5px;
+    max-width: 210px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.talentTreeHistory .talentHistory .talentRank {
+    display: inline-block;
+    color: gainsboro;
+    font-size: 11px;
+    position: relative;
+    overflow: hidden;
+}

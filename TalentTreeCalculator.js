@@ -9,6 +9,8 @@ class TalentTreeCalculator {
     maxUserSpentPoints = 71;
     classTypes;
 
+    userPointHistoryUpdateEventSubscribers = [];
+
     constructor(target, classTypes, baseUrl) {
         if (!target) throw 'Could not construct TalentTreeCalculator: Element not found';
         this.classTypes = classTypes;
@@ -81,6 +83,26 @@ class TalentTreeCalculator {
 
         var talentTable = this.initTalentTable(number, className, specName);
 
+        var talentTableHeader = talentTable.appendChild(document.createElement('div'));
+        talentTableHeader.classList.add('talentTableHeader');
+        
+        var talentTableName = talentTableHeader.appendChild(document.createElement('div'));
+        talentTableName.classList.add('talentTableName');
+        talentTableName.innerText = specName[0].toUpperCase() + specName.slice(1);
+        
+        var talentTablePoints = talentTableHeader.appendChild(document.createElement('div'));
+        talentTablePoints.classList.add('talentTablePoints');
+        talentTablePoints.innerText = '[0]';
+
+        var talentTableClear = talentTableHeader.appendChild(document.createElement('div'));
+        talentTableClear.classList.add('talentTableClear');
+        talentTableClear.innerHTML = '<svg viewBox="45.62 12.774 333.334 332.725" xmlns="http://www.w3.org/2000/svg"><rect x="193.431" y="77.859" width="38.321" height="194.039" rx="9" ry="9" style="fill: currentColor; stroke: none;" transform="matrix(0.707108, 0.707106, -0.707106, 0.707108, 185.924316, -99.10424)"/><rect x="193.431" y="77.859" width="38.321" height="194.039" rx="9" ry="9" style="fill: currentColor; stroke: none;" transform="matrix(0.707106, -0.707108, 0.707108, 0.707106, -60.479069, 202.458252)"/><ellipse style="stroke: currentColor; fill: none; stroke-width: 27px;" cx="212.287" cy="178.629" rx="149.635" ry="149.635"/></svg>';
+        
+        talentTableClear.addEventListener("click", function(event) {
+            event.preventDefault();
+            self.clearTalentTable(className, specName);
+        });
+
         talentTable.addEventListener("contextmenu", function(event) {
             event.preventDefault();
             return false;
@@ -113,12 +135,13 @@ class TalentTreeCalculator {
                     var params = {
                         class: event.target.dataset.class,
                         spec: event.target.dataset.spec,
-                        specNumber: number,
-                        "row": parseInt(event.target.dataset.row),
-                        "column": parseInt(event.target.dataset.column),
-                        rank: parseInt(event.target.dataset.rank)
+                        row: parseInt(event.target.dataset.row),
+                        column: parseInt(event.target.dataset.column),
+                        rank: parseInt(event.target.dataset.rank),
+                        detailed: true
                     };
                     self.showTooltip(params);
+                    self.positionTooltipToTalent(params.spec, params.row, params.column);
                 });
 
                 talentAnchor.addEventListener("mouseleave", function(event) {
@@ -314,23 +337,8 @@ class TalentTreeCalculator {
         talentTable.style.backgroundImage = "url('" + this.baseUrl + imageName + "')";
         talentTable.classList.add("talentTable");
         talentTable.dataset.specNumber = number;
+        talentTable.dataset.spec = specName;
         return talentTable;
-    }
-
-    getParamsFromString(paramString) {
-        var stringSplit = paramString.split('?');
-        paramString = (stringSplit.length >= 2) ? stringSplit[1] : stringSplit[0];
-        var paramStringSplit = paramString.split('&');
-
-        var params = {};
-
-        for (var i = 0; i < paramStringSplit.length; i++) {
-            var paramPair = paramStringSplit[i].split('=');
-            if (paramPair.length != 2) throw 'Invalid parameter string format';
-            params[paramPair[0]] = paramPair[1];
-        }
-
-        return params;
     }
 
     addTalentRank(talentAnchor) {
@@ -347,8 +355,6 @@ class TalentTreeCalculator {
         var isLocked = false;
         if (talentData.lockRules.length > 0) {
             talentData.lockRules.forEach(function(lockRule) {
-                if (self.classTypes[talentAnchor.dataset.class][talentAnchor.dataset.spec][lockRule.row] == undefined) throw 'Undefined lock rule row specified';
-                if (self.classTypes[talentAnchor.dataset.class][talentAnchor.dataset.spec][lockRule.row][lockRule.column] == undefined) throw 'Undefined lock rule column specified';
                 var otherTalentData = self.classTypes[talentAnchor.dataset.class][talentAnchor.dataset.spec][lockRule.row][lockRule.column];
 
                 if (self.getUserSpentPointsInTalent(talentAnchor.dataset.spec, lockRule.row, lockRule.column) < otherTalentData.ranks.length) {
@@ -360,9 +366,15 @@ class TalentTreeCalculator {
 
         if (isLocked) return;
 
-        var userPointKey = talentAnchor.dataset.spec + ':' + talentAnchor.dataset.row + ':' + talentAnchor.dataset.column + ':' + (parseInt(talentAnchor.dataset.rank) + 1);
+        var userPointKey = talentAnchor.dataset.class + ':' + 
+            talentAnchor.dataset.spec + ':' + 
+            talentAnchor.dataset.row + ':' + 
+            talentAnchor.dataset.column + ':' + 
+            (parseInt(talentAnchor.dataset.rank) + 1);
         this.userPointHistory.push(userPointKey);
+        this.userPointHistoryUpdateEvent();
         this.updateTalentAnchor(talentAnchor, parseInt(talentAnchor.dataset.rank) + 1);
+        this.updateTalentTableHeader(talentAnchor.dataset.spec);
     }
 
     subtractTalentRank(talentAnchor) {
@@ -424,10 +436,69 @@ class TalentTreeCalculator {
 
         if (!canSubtract) return;
         
-        var userPointKey = params.spec + ':' + params.row + ':' + params.column + ':' + params.rank;
+        var userPointKey = params.class + ':' +
+            params.spec + ':' +
+            params.row + ':' +
+            params.column + ':' +
+            params.rank;
         var userPointIndex = this.userPointHistory.indexOf(userPointKey);
         if (userPointIndex >= 0) this.userPointHistory.splice(userPointIndex, 1);
+        this.userPointHistoryUpdateEvent();
         this.updateTalentAnchor(talentAnchor, params.rank - 1);
+        this.updateTalentTableHeader(params.spec);
+    }
+
+    clearTalentTable(className, specName) {
+        var self = this;
+
+        var talentAnchors = this.element.querySelectorAll('.talentAnchor[data-spec="' + specName + '"]');
+        Array.prototype.forEach.call(talentAnchors, function(talentAnchor) {
+            talentAnchor.dataset.rank = 0;
+            var params = {
+                class: className,
+                spec: specName,
+                row: talentAnchor.dataset.row,
+                column: talentAnchor.dataset.column
+            };
+            var talentRanks = talentAnchor.getElementsByClassName('talentRanks')[0];
+            var talentData = self.getTalentData(params);
+            talentRanks.innerText = "0/" + talentData.ranks.length;
+            
+            var isLocked = false;
+            if (talentAnchor.dataset.row > 0) {
+                isLocked = true;
+            }
+            
+            if (talentData.lockRules.length > 0 && !isLocked) {
+                talentData.lockRules.forEach(function(lockRule) {
+                    var otherTalentData = self.classTypes[className][specName][lockRule.row][lockRule.column];
+
+                    if (self.getUserSpentPointsInTalent(specName, lockRule.row, lockRule.column) < otherTalentData.ranks.length) {
+                        isLocked = true;
+                        return;
+                    }
+                });
+            }
+
+            var talentImg = talentAnchor.getElementsByClassName('talentImg')[0];
+            if (isLocked) {
+                talentImg.classList.add('locked');
+            } else {
+                talentImg.classList.remove('locked');
+            }
+        });
+
+        this.userSpentPoints[specName] = [];
+        
+        var newUserPointHistory = [];
+        this.userPointHistory.forEach(function(userPoint) {
+            if (!userPoint.includes(specName)) {
+                newUserPointHistory.push(userPoint);
+            }
+        });
+        this.userPointHistory = newUserPointHistory;
+        this.updateTalentTableHeader(specName);
+        this.userPointHistoryUpdateEvent();
     }
 
     updateTalentAnchor(talentAnchor, rank) {
@@ -442,7 +513,8 @@ class TalentTreeCalculator {
 
         talentAnchor.dataset.rank = rank;
         var talentRanks = talentAnchor.getElementsByClassName('talentRanks')[0];
-        talentRanks.innerText = rank + "/" + this.classTypes[params.class][params.spec][params.row][params.column].ranks.length;
+        var talentData = this.getTalentData(params);
+        talentRanks.innerText = rank + "/" + talentData.ranks.length;
 
         if (this.userSpentPoints[params.spec] == undefined) {
             this.userSpentPoints[params.spec] = [];
@@ -457,32 +529,35 @@ class TalentTreeCalculator {
         this.showTooltip(params);
     }
 
+    updateTalentTableHeader(specName) {
+        var talentTablePoints = this.element.querySelector('.talentTable[data-spec="' + specName + '"] .talentTablePoints');
+        talentTablePoints.innerText = '[' + this.getUserSpentPointsInSpec(specName) + ']';
+    }
+
     updateLocks(params) {
         var self = this;
-        var talentElements = this.element.querySelectorAll('.talentAnchor[data-spec="' + params.spec + '"]');
+        var talentAnchors = this.element.querySelectorAll('.talentAnchor[data-spec="' + params.spec + '"]');
         var spentPoints = this.getUserSpentPointsInSpec(params.spec);
 
-        Array.prototype.forEach.call(talentElements, function(talentElement) {
+        Array.prototype.forEach.call(talentAnchors, function(talentAnchor) {
             var isLocked = false;
 
             var talentParams = {
-                class: talentElement.dataset.class,
-                spec: talentElement.dataset.spec,
-                specNumber: parseInt(talentElement.dataset.number),
-                "row": parseInt(talentElement.dataset.row),
-                "column": parseInt(talentElement.dataset.column),
-                rank: parseInt(talentElement.dataset.rank)
+                class: talentAnchor.dataset.class,
+                spec: talentAnchor.dataset.spec,
+                specNumber: parseInt(talentAnchor.dataset.number),
+                "row": parseInt(talentAnchor.dataset.row),
+                "column": parseInt(talentAnchor.dataset.column),
+                rank: parseInt(talentAnchor.dataset.rank)
             }
             
             if (spentPoints < talentParams.row * 5) {
                 isLocked = true;
             }
 
-            var talentData = self.classTypes[talentParams.class][talentParams.spec][talentParams.row][talentParams.column];
+            var talentData = self.getTalentData(talentParams);
             if (talentData.lockRules.length > 0 && !isLocked) {
                 talentData.lockRules.forEach(function(lockRule) {
-                    if (self.classTypes[talentParams.class][talentParams.spec][lockRule.row] == undefined) throw 'Undefined lock rule row specified';
-                    if (self.classTypes[talentParams.class][talentParams.spec][lockRule.row][lockRule.column] == undefined) throw 'Undefined lock rule column specified';
                     var otherTalentData = self.classTypes[talentParams.class][talentParams.spec][lockRule.row][lockRule.column];
 
                     if (self.getUserSpentPointsInTalent(talentParams.spec, lockRule.row, lockRule.column) < otherTalentData.ranks.length) {
@@ -492,7 +567,7 @@ class TalentTreeCalculator {
                 });
             }
 
-            var talentImg = talentElement.getElementsByClassName('talentImg')[0];
+            var talentImg = talentAnchor.getElementsByClassName('talentImg')[0];
             if (isLocked) {
                 talentImg.classList.add('locked');
             } else {
@@ -537,14 +612,19 @@ class TalentTreeCalculator {
         return this.userSpentPoints[specName][row][column];
     }
 
-    showTooltip(params) {
-        var self = this;
+    getTalentData(params) {
         if (this.classTypes[params.class] == undefined) throw 'Undefined classType specified';
         if (this.classTypes[params.class][params.spec] == undefined) throw 'Undefined specName specified';
         if (this.classTypes[params.class][params.spec][params.row] == undefined) throw 'Undefined row specified';
         if (this.classTypes[params.class][params.spec][params.row][params.column] == undefined) throw 'Undefined column specified';
-
         var talentData = this.classTypes[params.class][params.spec][params.row][params.column];
+        return talentData;
+    }
+
+    showTooltip(params) {
+        var self = this;
+
+        var talentData = this.getTalentData(params);
 
         this.tooltip.getElementsByClassName('talentName')[0].innerText = talentData.name;
         this.tooltip.getElementsByClassName('talentRank')[0].innerText = 'Rank ' + (params.rank == 0 ? 1 : params.rank);
@@ -577,53 +657,60 @@ class TalentTreeCalculator {
         }
 
         var rankTexts = [talentData.ranks[(params.rank <= 0 ? 0 : params.rank - 1)].text];
-        if (params.rank > 0 && params.rank < talentData.ranks.length) {
+        if (params.rank > 0 && params.rank < talentData.ranks.length && params.detailed) {
             rankTexts.push("Next Rank");
             rankTexts.push(talentData.ranks[params.rank].text);
         }
         this.tooltip.getElementsByClassName('talentText')[0].innerHTML = rankTexts.join('</br></br>');
 
-        var isLocked = false;
-        var statuses = [];
+        var tooltipStatus = this.tooltip.getElementsByClassName('talentStatus')[0];
+        if (params.detailed) {
+            var isLocked = false;
+            var statuses = [];
 
-        if (this.getUserSpentPointsInSpec(params.spec) < params.row * 5) {
-            statuses.push("Requires " + (params.row * 5) + " points in " + (params.spec[0] + params.spec.substring(1)));
-            isLocked = true;
-        }
+            if (this.getUserSpentPointsInSpec(params.spec) < params.row * 5) {
+                statuses.push("Requires " + (params.row * 5) + " points in " + (params.spec[0] + params.spec.substring(1)));
+                isLocked = true;
+            }
 
-        if (talentData.lockRules.length > 0) {
-            talentData.lockRules.forEach(function(lockRule) {
-                if (self.classTypes[params.class][params.spec][lockRule.row] == undefined) throw 'Undefined lock rule row specified';
-                if (self.classTypes[params.class][params.spec][lockRule.row][lockRule.column] == undefined) throw 'Undefined lock rule column specified';
-                var otherTalentData = self.classTypes[params.class][params.spec][lockRule.row][lockRule.column];
+            if (talentData.lockRules.length > 0) {
+                talentData.lockRules.forEach(function(lockRule) {
+                    var otherTalentData = self.classTypes[params.class][params.spec][lockRule.row][lockRule.column];
 
-                if (self.getUserSpentPointsInTalent(params.spec, lockRule.row, lockRule.column) < otherTalentData.ranks.length) {
-                    isLocked = true;
-                    statuses.push("Requires " + otherTalentData.ranks.length + " points in " + otherTalentData.name);
-                }
-            });
-        }
+                    if (self.getUserSpentPointsInTalent(params.spec, lockRule.row, lockRule.column) < otherTalentData.ranks.length) {
+                        isLocked = true;
+                        statuses.push("Requires " + otherTalentData.ranks.length + " points in " + otherTalentData.name);
+                    }
+                });
+            }
 
-        this.tooltip.getElementsByClassName('talentStatus')[0].innerHTML = statuses.join('</br>');
+            tooltipStatus.innerHTML = statuses.join('</br>');
 
-        if (isLocked) {
-            this.tooltip.getElementsByClassName('talentStatus')[0].classList.add('locked');
+            if (isLocked) {
+                tooltipStatus.classList.add('locked');
+            } else {
+                tooltipStatus.innerText = "Click to learn";
+                tooltipStatus.classList.remove('locked');
+            }
+            tooltipStatus.classList.remove('hidden');
         } else {
-            this.tooltip.getElementsByClassName('talentStatus')[0].innerText = "Click to learn";
-            this.tooltip.getElementsByClassName('talentStatus')[0].classList.remove('locked');
+            tooltipStatus.classList.add('hidden');
         }
 
         this.tooltip.classList.remove('hidden');
-        this.positionTooltip(params.specNumber, params.row, params.column);
     }
 
-    positionTooltip(specNumber, row, column) {
-        var talentElement = this.element.querySelector('.talentAnchor[data-spec-number="' + specNumber + '"][data-row="' + row + '"][data-column="' + column + '"]');
+    positionTooltipToTalent(spec, row, column) {
+        var talentElement = this.element.querySelector('.talentAnchor[data-spec="' + spec + '"][data-row="' + row + '"][data-column="' + column + '"]');
         if (!talentElement) return;
+        this.positionTooltip(this.element, talentElement);
+    }
 
-        var elementRect = this.element.getBoundingClientRect();
+    positionTooltip(targetParent, target) {
+        targetParent.appendChild(this.tooltip);
+        var elementRect = targetParent.getBoundingClientRect();
         var tooltipRect = this.tooltip.getBoundingClientRect();
-        var talentRect = talentElement.getBoundingClientRect();
+        var talentRect = target.getBoundingClientRect();
 
         var top = 0;
         var left = 0;
@@ -639,11 +726,12 @@ class TalentTreeCalculator {
             return;
         }
 
-        top = talentRect.top - elementRect.top - 80;
+        top = talentRect.top - elementRect.top - tooltipHeight;
         if (top < 0) top = talentRect.top - elementRect.top;
 
         var tooltipWidth = tooltipRect.right - tooltipRect.left;
-        left = talentRect.right - elementRect.left + 20;
+        var talentWidth = talentRect.right - talentRect.left;
+        left = talentRect.left + (talentWidth / 2) - elementRect.left + 30;
         if (left + tooltipWidth + 5 > screen.width) {
             left = talentRect.left - elementRect.left - 20 - tooltipWidth;
         }
@@ -654,5 +742,16 @@ class TalentTreeCalculator {
 
     hideTooltip() {
         this.tooltip.classList.add('hidden');
+    }
+    
+    userPointHistoryUpdateEvent() {
+        var self = this;
+        this.userPointHistoryUpdateEventSubscribers.forEach(function(callback) {
+            callback(self.userPointHistory);
+        });
+    }
+
+    subscribeToUserPointHistoryUpdateEvent(object, callback) {
+        this.userPointHistoryUpdateEventSubscribers.push(callback.bind(object));
     }
 }
