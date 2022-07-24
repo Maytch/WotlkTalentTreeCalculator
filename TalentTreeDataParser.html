@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <title>WotLK Talent Tree Calculator Tool</title>
+    <meta name="viewport" 
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+
+    <script type="text/javascript" src=".//TalentTreeDataParser.js?v=1.01"></script>
+    <style>
+        textarea {
+            min-width: 600px;
+            min-height: 200px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="test">
+        <div>
+            <textarea id="jsonInput"></textarea>
+        </div>
+        <button id="jsonSubmit">JSON To CSV</button>
+        <div>
+            <textarea id="csvOutput"></textarea>
+        </div>
+        <hr>
+        
+        <div>
+            <textarea id="csvInput"></textarea>
+        </div>
+        <button id="csvSubmit">CSV To JSON</button>
+        <div>
+            <textarea id="jsonOutput"></textarea>
+        </div>
+    </div>
+    
+    <script>
+        var talentTreeParser = new TalentTreeDataParser();
+
+        document.getElementById('jsonSubmit').addEventListener('click', parseJSON);
+        document.getElementById('csvSubmit').addEventListener('click', parseCSV);
+
+        function parseJSON() {
+            var jsonString = document.getElementById('jsonInput').value;
+            var csvString = talentTreeParser.JSONStringToCSV(jsonString);
+            console.log(csvString);
+            document.getElementById('csvOutput').value = csvString;
+
+            download(csvString, 'TalentData.csv', 'text/plain');
+        }
+
+        function parseCSV() {
+            var csvString = document.getElementById('csvInput').value;
+            var jsonString = talentTreeParser.CSVStringToJSON(csvString);
+            console.log(jsonString);
+            document.getElementById('jsonOutput').value = jsonString;
+            
+            download(jsonString, 'TalentData.json', 'text/json');
+        }
+
+        function download(content, fileName, contentType) {
+            var a = document.createElement("a");
+            var file = new Blob([content], {type: contentType});
+            a.href = URL.createObjectURL(file);
+            a.download = fileName;
+            a.click();
+        }
+    </script>
+</body>
+
+</html>
