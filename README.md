@@ -19,6 +19,7 @@ var talentTreeCalculator = new TalentTreeCalculator(document.getElementById('tes
 talentTreeCalculator.buildSpec(0, "deathknight", "blood");
 talentTreeCalculator.buildSpec(1, "deathknight", "frost");
 talentTreeCalculator.buildSpec(2, "deathknight", "unholy");
+talentTreeCalculator.buildGlyphTable("deathknight");
 ```
 
 ## Initialising the TalentTreeHistory
