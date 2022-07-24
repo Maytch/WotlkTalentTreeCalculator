@@ -7,13 +7,15 @@ class TalentTreeCalculator {
     userSpentPoints = {};
     userPointHistory = [];
     maxUserSpentPoints = 71;
-    classTypes;
+    classData;
+    glyphData;
 
     userPointHistoryUpdateEventSubscribers = [];
 
-    constructor(target, classTypes, baseUrl) {
+    constructor(target, classData, glyphData, baseUrl) {
         if (!target) throw 'Could not construct TalentTreeCalculator: Element not found';
-        this.classTypes = classTypes;
+        this.classData = classData;
+        this.glyphData = glyphData;
         this.initTalentTree(target);
         this.initTooltip();
         if (baseUrl != undefined) this.baseUrl = baseUrl;
@@ -79,7 +81,7 @@ class TalentTreeCalculator {
 
     buildSpec(number, className, specName) {
         var self = this;
-        var specData = this.classTypes[className][specName];
+        var specData = this.classData[className][specName];
 
         var talentTable = this.initTalentTable(number, className, specName);
 
@@ -253,7 +255,7 @@ class TalentTreeCalculator {
             arrowEnd.innerHTML = '<svg viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg"><path d="M 345.44 248.29 L 151.15 442.57 C 138.791 454.935 118.753 454.935 106.4 442.57 C 94.046 430.216 155.683 223.842 155.683 223.842 C 155.683 223.842 94.046 21.622 106.4 9.268 C 118.754 -3.091 138.791 -3.091 151.15 9.268 L 345.44 203.548 C 351.617 209.728 354.702 217.819 354.702 225.914 C 354.702 234.013 351.611 242.11 345.435 248.287" fill="currentColor" transform="matrix(0.03541, -0.00013, 0.00013, 0.03541, 2.98, 3.02)"/></svg>';
 
             top = toRect.top - elementRect.top - 15;
-            left = left - 12;
+            left = left - 10;
 
             arrowEnd.style.top = top + 'px';
             arrowEnd.style.left = left + 'px';
@@ -315,7 +317,7 @@ class TalentTreeCalculator {
             arrowEnd.innerHTML = '<svg viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg"><path d="M 345.44 248.29 L 151.15 442.57 C 138.791 454.935 118.753 454.935 106.4 442.57 C 94.046 430.216 155.683 223.842 155.683 223.842 C 155.683 223.842 94.046 21.622 106.4 9.268 C 118.754 -3.091 138.791 -3.091 151.15 9.268 L 345.44 203.548 C 351.617 209.728 354.702 217.819 354.702 225.914 C 354.702 234.013 351.611 242.11 345.435 248.287" fill="currentColor" transform="matrix(0.03541, -0.00013, 0.00013, 0.03541, 2.98, 3.02)"/></svg>';
 
             top = toRect.top - elementRect.top - 15;
-            left = left - 12;
+            left = left - 10;
 
             arrowEnd.style.top = top + 'px';
             arrowEnd.style.left = left + 'px';
@@ -326,18 +328,22 @@ class TalentTreeCalculator {
     initTalentTable(number, className, specName) {
         var existingTalentTables = this.element.getElementsByClassName("talentTable");
         var talentTable;
+        var imageName = className + "_" + specName + "_background.jpg";
+
         if (existingTalentTables.length > number) {
             talentTable = existingTalentTables[number];
             talentTable.innerHTML = null;
             return talentTable;
+        } else {
+            talentTable = this.element.appendChild(document.createElement('div'));
         }
 
-        var imageName = className + "_" + specName + "_background.jpg";
-        talentTable = this.element.appendChild(document.createElement('div'));
         talentTable.style.backgroundImage = "url('" + this.baseUrl + imageName + "')";
         talentTable.classList.add("talentTable");
+        talentTable.dataset.class = className;
         talentTable.dataset.specNumber = number;
         talentTable.dataset.spec = specName;
+
         return talentTable;
     }
 
@@ -345,7 +351,7 @@ class TalentTreeCalculator {
         var self = this;
         if (this.getUserSpentPoints() + 1 > this.maxUserSpentPoints) return;
         
-        var talentData = this.classTypes[talentAnchor.dataset.class][talentAnchor.dataset.spec][talentAnchor.dataset.row][talentAnchor.dataset.column];
+        var talentData = this.classData[talentAnchor.dataset.class][talentAnchor.dataset.spec][talentAnchor.dataset.row][talentAnchor.dataset.column];
         if (parseInt(talentAnchor.dataset.rank) + 1 > talentData.ranks.length) return;
 
         if (this.getUserSpentPointsInSpec(talentAnchor.dataset.spec) < talentAnchor.dataset.row * 5) {
@@ -355,7 +361,7 @@ class TalentTreeCalculator {
         var isLocked = false;
         if (talentData.lockRules.length > 0) {
             talentData.lockRules.forEach(function(lockRule) {
-                var otherTalentData = self.classTypes[talentAnchor.dataset.class][talentAnchor.dataset.spec][lockRule.row][lockRule.column];
+                var otherTalentData = self.classData[talentAnchor.dataset.class][talentAnchor.dataset.spec][lockRule.row][lockRule.column];
 
                 if (self.getUserSpentPointsInTalent(talentAnchor.dataset.spec, lockRule.row, lockRule.column) < otherTalentData.ranks.length) {
                     isLocked = true;
@@ -395,9 +401,9 @@ class TalentTreeCalculator {
         var pointsUpToRow = 0;
         var pointsAfterRow = 0;
         var minPoints = 0;
-        for (i = 0; i < this.classTypes[params.class][params.spec].length; i++) {
+        for (i = 0; i < this.classData[params.class][params.spec].length; i++) {
             var points = 0;
-            for (j = 0; j < this.classTypes[params.class][params.spec][i].length; j++) {
+            for (j = 0; j < this.classData[params.class][params.spec][i].length; j++) {
                 if (this.userSpentPoints[params.spec][i] != undefined &&
                     this.userSpentPoints[params.spec][i][j] != undefined) {
                     points += this.userSpentPoints[params.spec][i][j];
@@ -413,13 +419,13 @@ class TalentTreeCalculator {
         if (pointsAfterRow > 0 && pointsUpToRow - 1 < minPoints) return;
 
         var canSubtract = true;
-        for (i = 0; i < this.classTypes[params.class][params.spec].length; i++) {
-            for (j = 0; j < this.classTypes[params.class][params.spec][i].length; j++) {
+        for (i = 0; i < this.classData[params.class][params.spec].length; i++) {
+            for (j = 0; j < this.classData[params.class][params.spec][i].length; j++) {
                 if (!canSubtract) break;
 
                 var spentPointsInTalent = this.getUserSpentPointsInTalent(params.spec, i, j);
 
-                var talentData = this.classTypes[params.class][params.spec][i][j];
+                var talentData = this.classData[params.class][params.spec][i][j];
                 if (talentData == null || spentPointsInTalent <= 0) continue;
 
                 if (talentData.lockRules.length) {
@@ -471,7 +477,7 @@ class TalentTreeCalculator {
             
             if (talentData.lockRules.length > 0 && !isLocked) {
                 talentData.lockRules.forEach(function(lockRule) {
-                    var otherTalentData = self.classTypes[className][specName][lockRule.row][lockRule.column];
+                    var otherTalentData = self.classData[className][specName][lockRule.row][lockRule.column];
 
                     if (self.getUserSpentPointsInTalent(specName, lockRule.row, lockRule.column) < otherTalentData.ranks.length) {
                         isLocked = true;
@@ -566,7 +572,7 @@ class TalentTreeCalculator {
             var talentData = self.getTalentData(talentParams);
             if (talentData.lockRules.length > 0 && !isLocked) {
                 talentData.lockRules.forEach(function(lockRule) {
-                    var otherTalentData = self.classTypes[talentParams.class][talentParams.spec][lockRule.row][lockRule.column];
+                    var otherTalentData = self.classData[talentParams.class][talentParams.spec][lockRule.row][lockRule.column];
 
                     if (self.getUserSpentPointsInTalent(talentParams.spec, lockRule.row, lockRule.column) < otherTalentData.ranks.length) {
                         isLocked = true;
@@ -621,11 +627,11 @@ class TalentTreeCalculator {
     }
 
     getTalentData(params) {
-        if (this.classTypes[params.class] == undefined) throw 'Undefined classType specified';
-        if (this.classTypes[params.class][params.spec] == undefined) throw 'Undefined specName specified';
-        if (this.classTypes[params.class][params.spec][params.row] == undefined) throw 'Undefined row specified';
-        if (this.classTypes[params.class][params.spec][params.row][params.column] == undefined) throw 'Undefined column specified';
-        var talentData = this.classTypes[params.class][params.spec][params.row][params.column];
+        if (this.classData[params.class] == undefined) throw 'Undefined classType specified';
+        if (this.classData[params.class][params.spec] == undefined) throw 'Undefined specName specified';
+        if (this.classData[params.class][params.spec][params.row] == undefined) throw 'Undefined row specified';
+        if (this.classData[params.class][params.spec][params.row][params.column] == undefined) throw 'Undefined column specified';
+        var talentData = this.classData[params.class][params.spec][params.row][params.column];
         return talentData;
     }
 
@@ -633,6 +639,7 @@ class TalentTreeCalculator {
         var self = this;
 
         var talentData = this.getTalentData(params);
+        if (talentData == null) return;
 
         this.tooltip.getElementsByClassName('talentName')[0].innerText = talentData.name;
         this.tooltip.getElementsByClassName('talentRank')[0].innerText = 'Rank ' + (params.rank == 0 ? 1 : params.rank);
@@ -642,22 +649,22 @@ class TalentTreeCalculator {
         });
 
         if (talentData.headers.length > 0) {
-            if (talentData.headers[0].left.length) {
+            if (talentData.headers[0].left != undefined) {
                 this.tooltip.getElementsByClassName('talentHeaderLeft1')[0].classList.remove('hidden');
                 this.tooltip.getElementsByClassName('talentHeaderLeft1')[0].innerText = talentData.headers[0].left;
                 
             }
-            if (talentData.headers[0].right.length) {
+            if (talentData.headers[0].right != undefined) {
                 this.tooltip.getElementsByClassName('talentHeaderRight1')[0].classList.remove('hidden');
                 this.tooltip.getElementsByClassName('talentHeaderRight1')[0].innerText = talentData.headers[0].right;
             }
 
             if (talentData.headers.length > 1) {
-                if (talentData.headers[0].left.length) {
+                if (talentData.headers[1].left != undefined) {
                 this.tooltip.getElementsByClassName('talentHeaderLeft2')[0].classList.remove('hidden');
                     this.tooltip.getElementsByClassName('talentHeaderLeft2')[0].innerText = talentData.headers[1].left;
                 }
-                if (talentData.headers[0].right.length) {
+                if (talentData.headers[1].right != undefined) {
                 this.tooltip.getElementsByClassName('talentHeaderRight2')[0].classList.remove('hidden');
                     this.tooltip.getElementsByClassName('talentHeaderRight2')[0].innerText = talentData.headers[1].right;
                 }
@@ -683,7 +690,7 @@ class TalentTreeCalculator {
 
             if (talentData.lockRules.length > 0) {
                 talentData.lockRules.forEach(function(lockRule) {
-                    var otherTalentData = self.classTypes[params.class][params.spec][lockRule.row][lockRule.column];
+                    var otherTalentData = self.classData[params.class][params.spec][lockRule.row][lockRule.column];
 
                     if (self.getUserSpentPointsInTalent(params.spec, lockRule.row, lockRule.column) < otherTalentData.ranks.length) {
                         isLocked = true;
@@ -751,7 +758,115 @@ class TalentTreeCalculator {
     hideTooltip() {
         this.tooltip.classList.add('hidden');
     }
-    
+
+    buildGlyphTable(className) {
+        var self = this;
+
+        var glyphTable;
+        var existingGlyphTables = this.element.getElementsByClassName("glyphTable");
+        if (existingGlyphTables.length > 0) {
+            glyphTable = existingGlyphTables[0];
+            glyphTable.dataset.class = className;
+            this.clearGlyphTable();
+            return glyphTable;
+        }
+
+        glyphTable = this.element.appendChild(document.createElement('div'));
+        glyphTable.classList.add("glyphTable");
+        glyphTable.dataset.class = className;
+
+        var glyphTableHeader = glyphTable.appendChild(document.createElement('div'));
+        glyphTableHeader.classList.add('glyphTableHeader');
+        
+        var glyphTableName = glyphTableHeader.appendChild(document.createElement('div'));
+        glyphTableName.classList.add('glyphTableName');
+        glyphTableName.innerText = "Glyphs";
+        
+        var glyphTableClear = glyphTableHeader.appendChild(document.createElement('div'));
+        glyphTableClear.classList.add('glyphTableClear');
+        glyphTableClear.innerHTML = '<svg viewBox="45.62 12.774 333.334 332.725" xmlns="http://www.w3.org/2000/svg"><rect x="193.431" y="77.859" width="38.321" height="194.039" rx="9" ry="9" style="fill: currentColor; stroke: none;" transform="matrix(0.707108, 0.707106, -0.707106, 0.707108, 185.924316, -99.10424)"/><rect x="193.431" y="77.859" width="38.321" height="194.039" rx="9" ry="9" style="fill: currentColor; stroke: none;" transform="matrix(0.707106, -0.707108, 0.707108, 0.707106, -60.479069, 202.458252)"/><ellipse style="stroke: currentColor; fill: none; stroke-width: 27px;" cx="212.287" cy="178.629" rx="149.635" ry="149.635"/></svg>';
+        
+        glyphTableClear.addEventListener("click", function(event) {
+            event.preventDefault();
+            self.clearGlyphTable();
+        });
+
+        glyphTable.addEventListener("contextmenu", function(event) {
+            event.preventDefault();
+            return false;
+        });
+
+        this.buildGlyphList(glyphTable, className, "major");
+        this.buildGlyphList(glyphTable, className, "minor");
+    }
+
+    buildGlyphList(glyphTable, className, glyphType) {
+        var glyphList = glyphTable.appendChild(document.createElement('div'));
+        glyphList.classList.add(glyphType + 'GlyphList', 'glyphList');
+
+        var glyphListHeader = glyphList.appendChild(document.createElement('div'));
+        glyphListHeader.classList.add('glyphListHeader');
+        glyphListHeader.innerText = glyphType[0].toUpperCase() + glyphType.slice(1);
+
+        this.buildGlyphRow(glyphList, className, glyphType);
+        this.buildGlyphRow(glyphList, className, glyphType);
+        this.buildGlyphRow(glyphList, className, glyphType);
+    }
+
+    buildGlyphRow(glyphList, className, glyphType) {
+        var self = this;
+
+        var glyphRow = glyphList.appendChild(document.createElement('div'));
+        glyphRow.classList.add('glyphRow');
+
+        var glyphAnchor = glyphRow.appendChild(document.createElement('a'));
+        glyphAnchor.classList.add('glyphAnchor');
+        glyphAnchor.setAttribute('href', '#');
+        glyphAnchor.setAttribute('rel', '');
+        glyphAnchor.dataset.class = className;
+        glyphAnchor.dataset.type = glyphType;
+        glyphAnchor.dataset.bsToggle = "modal";
+        glyphAnchor.dataset.bsTarget = "#exampleModal";
+
+        glyphAnchor.addEventListener("click", function(event) {
+            self.openGlyphModal(className, glyphType);
+        });
+
+        var glyphImg = glyphAnchor.appendChild(document.createElement('div'));
+        glyphImg.classList.add('glyphImg');
+        glyphImg.style.backgroundImage = "url('" + this.baseUrl + "inventoryslot_empty.jpg')";
+
+        var glyphName = glyphAnchor.appendChild(document.createElement('div'));
+        glyphName.classList.add('glyphName');
+        glyphName.innerText = "Empty";
+    }
+
+    openGlyphModal(className, glyphType) {
+        if (this.glyphData[className] == undefined) throw "Class not found in Glyph Data";
+        if (this.glyphData[className][glyphType] == undefined) throw "Glyph Type not found in Glyph Data";
+
+        var glyphs = this.glyphData[className][glyphType];
+        console.log(glyphs);
+
+        //document.getElementById("backdrop").style.display = "block";
+        //document.getElementById("exampleModal").style.display = "block";
+        //document.getElementById("exampleModal").classList.add("show");
+    }
+
+    clearGlyphTable() {
+        var self = this;
+        var glyphAnchors = this.element.querySelector('.glyphAnchor');
+        if (glyphAnchors == null) return;
+
+        Array.prototype.forEach.call(glyphAnchors, function(glyphAnchor) {
+            var glyphImg = glyphAnchor.getElementByClassName('glyphImg')[0];
+            glyphImg.style.backgroundImage = "url('" + self.baseUrl + "inventoryslot_empty.jpg')";
+            
+            var glyphName = glyphAnchor.getElementByClassName('glyphName')[0];
+            glyphName.innerText = "Empty";
+        });
+    }
+
     userPointHistoryUpdateEvent() {
         var self = this;
         this.userPointHistoryUpdateEventSubscribers.forEach(function(callback) {
