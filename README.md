@@ -15,7 +15,7 @@ TalentData Spreadsheet here: https://docs.google.com/spreadsheets/d/1OGItB5b16FC
 
 Example:
 ```
-var talentTreeCalculator = new TalentTreeCalculator(document.getElementById('test'), jsonData, baseUrl);
+var talentTreeCalculator = new TalentTreeCalculator(document.getElementById('test'), jsonData, ".//Images//");
 talentTreeCalculator.buildSpec(0, "deathknight", "blood");
 talentTreeCalculator.buildSpec(1, "deathknight", "frost");
 talentTreeCalculator.buildSpec(2, "deathknight", "unholy");
