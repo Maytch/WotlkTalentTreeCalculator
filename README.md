@@ -21,6 +21,19 @@ talentTreeCalculator.buildSpec(1, "deathknight", "frost");
 talentTreeCalculator.buildSpec(2, "deathknight", "unholy");
 ```
 
+## Initialising the TalentTreeHistory
+
+- Include the TalentTreeHistory.js and recommended TalentTreeHistory.css files
+- Create an element that the TalentTreeHistory can initialise into
+- Initialise the TalentTreeHistory using your new element, the talentTreeCalculator, and the baseUrl of your image folder
+- Subscribe to the user point history event in the talentTreeCalculator so that it updates when the talent tree does
+
+Example:
+```
+var talentTreeHistory = new TalentTreeHistory(document.getElementById('history'), talentTreeCalculator, ".//Images//");
+talentTreeCalculator.subscribeToUserPointHistoryUpdateEvent(talentTreeHistory, talentTreeHistory.updateUserPointHistory);
+```
+
 ## Generating new json data
 
 - View/Edit the TalentData Spreadsheet here: https://docs.google.com/spreadsheets/d/1OGItB5b16FCRWYVKxPFvBu-RODsIrmC_xuZRTvjaXv4/edit?usp=sharing
