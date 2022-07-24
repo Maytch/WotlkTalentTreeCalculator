@@ -487,6 +487,13 @@ class TalentTreeCalculator {
                 talentImg.classList.remove('locked');
             }
         });
+        
+        var talentArrows = self.element.querySelectorAll('.talentArrow[data-spec="' + specName + '"]');
+        if (talentArrows.length > 0) {
+            Array.prototype.forEach.call(talentArrows, function(talentArrow) {
+                talentArrow.classList.add('locked');
+            });
+        }
 
         this.userSpentPoints[specName] = [];
         
@@ -508,7 +515,8 @@ class TalentTreeCalculator {
             specNumber: parseInt(talentAnchor.dataset.number),
             "row": parseInt(talentAnchor.dataset.row),
             "column": parseInt(talentAnchor.dataset.column),
-            rank: parseInt(rank)
+            rank: parseInt(rank),
+            detailed: true
         };
 
         talentAnchor.dataset.rank = rank;
