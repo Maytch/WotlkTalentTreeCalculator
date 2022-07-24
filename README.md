@@ -28,3 +28,10 @@ talentTreeCalculator.buildSpec(2, "deathknight", "unholy");
 - Open and paste contents of CSV into TalentTreeDataParser here: https://matt-hall.com/wotlk/talent-tree-calculator/TalentTreeDataParser.html
 - Select CSV To JSON
 - Update your JSON with the new file
+
+## TODO
+
+- Switch Calc by class
+- Export / Import talent trees as a url parameter
+- Talent Point History so you can show the order you spend talent points for tutorial
+- Save / Load your custom named talent builds (localstorage at first, maybe db later)
