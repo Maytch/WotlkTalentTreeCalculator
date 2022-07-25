@@ -206,7 +206,7 @@ class TalentTreeCalculator {
 
         var fromTalentAnchor = this.element.querySelector('.talentAnchor[data-spec-number="' + params.specNumber + '"][data-row="' + lockRule.row + '"][data-column="' + lockRule.column + '"]');
         var toTalentAnchor = this.element.querySelector('.talentAnchor[data-spec-number="' + params.specNumber + '"][data-row="' + params.row + '"][data-column="' + params.column + '"]');
-        var elementRect = this.element.getBoundingClientRect();
+        var elementRect = talentTable.getBoundingClientRect();
         var fromRect = fromTalentAnchor.getBoundingClientRect();
         var toRect = toTalentAnchor.getBoundingClientRect();
 
