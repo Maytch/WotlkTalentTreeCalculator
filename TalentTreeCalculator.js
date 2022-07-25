@@ -519,8 +519,8 @@ class TalentTreeCalculator {
             class: talentAnchor.dataset.class,
             spec: talentAnchor.dataset.spec,
             specNumber: parseInt(talentAnchor.dataset.number),
-            "row": parseInt(talentAnchor.dataset.row),
-            "column": parseInt(talentAnchor.dataset.column),
+            row: parseInt(talentAnchor.dataset.row),
+            column: parseInt(talentAnchor.dataset.column),
             rank: parseInt(rank),
             detailed: true
         };
@@ -541,6 +541,7 @@ class TalentTreeCalculator {
         this.userSpentPoints[params.spec][params.row][params.column] = rank;
         this.updateLocks(params);
         this.showTooltip(params);
+        this.positionTooltipToTalent(params.spec, params.row, params.column);
     }
 
     updateTalentTableHeader(specName) {
@@ -729,13 +730,14 @@ class TalentTreeCalculator {
 
         var top = 0;
         var left = 0;
-        var tooltipHeight = talentRect.bottom - talentRect.top;
+        var tooltipHeight = this.tooltip.offsetHeight;
+        var elementHeight = elementRect.bottom - elementRect.top;
 
         // Smaller screens
         if (screen.width < 600) {
             top = talentRect.top - elementRect.top - 10 - tooltipHeight;
-            if (top < 0) top = talentRect.bottom - elementRect.top + 10;
-
+            if (top < 0) top = talentRect.bottom - elementRect.top + 20;
+            console.log(top, talentRect.top, tooltipHeight, elementHeight);
             this.tooltip.style.top = top + "px";
             this.tooltip.style.left = left + "px";
             return;
