@@ -54,11 +54,11 @@ class TalentTreeHistory {
             if (keyedTalentHistoryElements[userPoint] != undefined) {
                 talentHistoryElement = keyedTalentHistoryElements[userPoint];
                 talentHistoryElement.getElementsByClassName('talentNumber')[0].innerText = i;
-                orderedTalentHistoryElements.push(talentHistoryElement);
             } else {
                 talentHistoryElement = self.createTalentHistoryElement(i, userPoint);
-                orderedTalentHistoryElements.push(talentHistoryElement);
             }
+
+            orderedTalentHistoryElements.push(talentHistoryElement);
             i++;
         });
 

@@ -3,21 +3,29 @@ class TalentTreeCalculator {
     element;
     tooltipId;
     tooltip;
+    glyphModal;
     baseUrl = './/Images//';
+    className = '';
     userSpentPoints = {};
     userPointHistory = [];
     maxUserSpentPoints = 71;
+    userGlyphs = {
+        major: [null, null, null],
+        minor: [null, null, null]
+    };
     classData;
-    glyphData;
+    glyphsData;
 
     userPointHistoryUpdateEventSubscribers = [];
+    userGlyphsUpdateEventSubscribers = [];
 
-    constructor(target, classData, glyphData, baseUrl) {
+    constructor(target, classData, glyphsData, baseUrl) {
         if (!target) throw 'Could not construct TalentTreeCalculator: Element not found';
         this.classData = classData;
-        this.glyphData = glyphData;
+        this.glyphsData = glyphsData;
         this.initTalentTree(target);
         this.initTooltip();
+        this.initGlyphModal();
         if (baseUrl != undefined) this.baseUrl = baseUrl;
     }
 
@@ -81,6 +89,7 @@ class TalentTreeCalculator {
 
     buildSpec(number, className, specName) {
         var self = this;
+        this.className = className;
         var specData = this.classData[className][specName];
 
         var talentTable = this.initTalentTable(number, className, specName);
@@ -372,14 +381,28 @@ class TalentTreeCalculator {
 
         if (isLocked) return;
 
-        var userPointKey = talentAnchor.dataset.class + ':' + 
-            talentAnchor.dataset.spec + ':' + 
-            talentAnchor.dataset.row + ':' + 
-            talentAnchor.dataset.column + ':' + 
-            (parseInt(talentAnchor.dataset.rank) + 1);
+        var params = {
+            class: talentAnchor.dataset.class,
+            spec: talentAnchor.dataset.spec,
+            specNumber: parseInt(talentAnchor.dataset.number),
+            row: parseInt(talentAnchor.dataset.row),
+            column: parseInt(talentAnchor.dataset.column),
+            rank: parseInt(talentAnchor.dataset.rank) + 1,
+            detailed: true
+        };
+
+        var userPointKey = params.class + ':' + 
+            params.spec + ':' + 
+            params.row + ':' + 
+            params.column + ':' + 
+            params.rank;
         this.userPointHistory.push(userPointKey);
         this.userPointHistoryUpdateEvent();
-        this.updateTalentAnchor(talentAnchor, parseInt(talentAnchor.dataset.rank) + 1);
+
+        this.updateTalentAnchor(talentAnchor, params.rank);
+        this.updateLocks(params.spec);
+        this.showTooltip(params);
+        this.positionTooltipToTalent(params.spec, params.row, params.column);
         this.updateTalentTableHeader(talentAnchor.dataset.spec);
     }
 
@@ -391,8 +414,8 @@ class TalentTreeCalculator {
             class: talentAnchor.dataset.class,
             spec: talentAnchor.dataset.spec,
             specNumber: parseInt(talentAnchor.dataset.number),
-            "row": parseInt(talentAnchor.dataset.row),
-            "column": parseInt(talentAnchor.dataset.column),
+            row: parseInt(talentAnchor.dataset.row),
+            column: parseInt(talentAnchor.dataset.column),
             rank: parseInt(talentAnchor.dataset.rank)
         };
 
@@ -450,7 +473,12 @@ class TalentTreeCalculator {
         var userPointIndex = this.userPointHistory.indexOf(userPointKey);
         if (userPointIndex >= 0) this.userPointHistory.splice(userPointIndex, 1);
         this.userPointHistoryUpdateEvent();
-        this.updateTalentAnchor(talentAnchor, params.rank - 1);
+
+        params.rank -= 1;
+        this.updateTalentAnchor(talentAnchor, params.rank);
+        this.updateLocks(params.spec);
+        this.showTooltip(params);
+        this.positionTooltipToTalent(params.spec, params.row, params.column);
         this.updateTalentTableHeader(params.spec);
     }
 
@@ -539,9 +567,6 @@ class TalentTreeCalculator {
         }
 
         this.userSpentPoints[params.spec][params.row][params.column] = rank;
-        this.updateLocks(params);
-        this.showTooltip(params);
-        this.positionTooltipToTalent(params.spec, params.row, params.column);
     }
 
     updateTalentTableHeader(specName) {
@@ -549,10 +574,10 @@ class TalentTreeCalculator {
         talentTablePoints.innerText = '[' + this.getUserSpentPointsInSpec(specName) + ']';
     }
 
-    updateLocks(params) {
+    updateLocks(specName) {
         var self = this;
-        var talentAnchors = this.element.querySelectorAll('.talentAnchor[data-spec="' + params.spec + '"]');
-        var spentPoints = this.getUserSpentPointsInSpec(params.spec);
+        var talentAnchors = this.element.querySelectorAll('.talentAnchor[data-spec="' + specName + '"]');
+        var spentPoints = this.getUserSpentPointsInSpec(specName);
 
         Array.prototype.forEach.call(talentAnchors, function(talentAnchor) {
             var isLocked = false;
@@ -761,9 +786,95 @@ class TalentTreeCalculator {
         this.tooltip.classList.add('hidden');
     }
 
+    initGlyphModal() {
+        var self = this;
+
+        var glyphModal = this.element.appendChild(document.createElement('div'));
+        glyphModal.classList.add('talentTreeGlyphModal', 'hidden');
+
+        glyphModal.addEventListener("click", function(event) {
+            if(event.target !== event.currentTarget) return;
+            self.closeGlyphModal();
+        });
+        
+        var glyphDialog = glyphModal.appendChild(document.createElement('div'));
+        glyphDialog.classList.add('talentTreeGlyphModalDialog');
+        
+        var glyphContent = glyphDialog.appendChild(document.createElement('div'));
+        glyphContent.classList.add('talentTreeGlyphModalContent');
+
+        var glyphHeader = glyphContent.appendChild(document.createElement('div'));
+        glyphHeader.classList.add('talentTreeGlyphModalHeader');
+
+        var glyphSearch = glyphHeader.appendChild(document.createElement('div'));
+        glyphSearch.classList.add('talentTreeGlyphModalSearch');
+
+        var glyphSearchIcon = glyphSearch.appendChild(document.createElement('div'));
+        glyphSearchIcon.classList.add('talentTreeGlyphModalSearchIcon');
+        
+        var glyphSearchClear = glyphSearch.appendChild(document.createElement('div'));
+        glyphSearchClear.classList.add('talentTreeGlyphModalSearchClear');
+        glyphSearchClear.innerHTML = '<svg viewBox="45.62 12.774 333.334 332.725" xmlns="http://www.w3.org/2000/svg"><rect x="193.431" y="77.859" width="38.321" height="194.039" rx="9" ry="9" style="fill: currentColor; stroke: none;" transform="matrix(0.707108, 0.707106, -0.707106, 0.707108, 185.924316, -99.10424)"/><rect x="193.431" y="77.859" width="38.321" height="194.039" rx="9" ry="9" style="fill: currentColor; stroke: none;" transform="matrix(0.707106, -0.707108, 0.707108, 0.707106, -60.479069, 202.458252)"/><ellipse style="stroke: currentColor; fill: none; stroke-width: 27px;" cx="212.287" cy="178.629" rx="149.635" ry="149.635"/></svg>';
+
+        var glyphSearchInput = glyphSearch.appendChild(document.createElement('input'));
+        glyphSearchInput.classList.add('talentTreeGlyphModalSearchInput');
+        glyphSearchInput.setAttribute('placeholder', 'Search for Glphys...');
+
+        var glyphClose = glyphHeader.appendChild(document.createElement('div'));
+        glyphClose.classList.add('talentTreeGlyphModalClose');
+        glyphClose.innerHTML = '<svg viewBox="45.62 12.774 333.334 332.725" xmlns="http://www.w3.org/2000/svg"><rect x="193.431" y="77.859" width="38.321" height="194.039" rx="9" ry="9" style="fill: currentColor; stroke: none;" transform="matrix(0.707108, 0.707106, -0.707106, 0.707108, 185.924316, -99.10424)"/><rect x="193.431" y="77.859" width="38.321" height="194.039" rx="9" ry="9" style="fill: currentColor; stroke: none;" transform="matrix(0.707106, -0.707108, 0.707108, 0.707106, -60.479069, 202.458252)"/><ellipse style="stroke: currentColor; fill: none; stroke-width: 27px;" cx="212.287" cy="178.629" rx="149.635" ry="149.635"/></svg>';
+
+        glyphClose.addEventListener("click", function(event) {
+            self.closeGlyphModal();
+        });
+
+        var glyphBody = glyphContent.appendChild(document.createElement('div'));
+        glyphBody.classList.add('talentTreeGlyphModalBody');
+
+        var glyphTable = glyphBody.appendChild(document.createElement('table'));
+        glyphTable.classList.add('talentTreeGlyphModalTable');
+
+        var glyphTableHeader = glyphTable.appendChild(document.createElement('thead'));
+        glyphTableHeader.classList.add('talentTreeGlyphModalTableHeader');
+
+        var glyphTableHeaderRow = glyphTableHeader.appendChild(document.createElement('tr'));
+        glyphTableHeaderRow.classList.add('talentTreeGlyphModalTableHeaderRow');
+
+        var glyphTableHeaderColumn = glyphTableHeaderRow.appendChild(document.createElement('th'));
+        glyphTableHeaderColumn.classList.add('talentTreeGlyphModalTableHeaderColumn');
+        glyphTableHeaderColumn.style.width = "36px";
+
+        glyphTableHeaderColumn = glyphTableHeaderRow.appendChild(document.createElement('th'));
+        glyphTableHeaderColumn.classList.add('talentTreeGlyphModalTableHeaderColumn');
+        glyphTableHeaderColumn.dataset.column = "name";
+        glyphTableHeaderColumn.innerText = "Name";
+
+        glyphTableHeaderColumn = glyphTableHeaderRow.appendChild(document.createElement('th'));
+        glyphTableHeaderColumn.classList.add('talentTreeGlyphModalTableHeaderColumn');
+        glyphTableHeaderColumn.dataset.column = "description";
+        glyphTableHeaderColumn.innerText = "Description";
+
+        glyphTableHeaderColumn = glyphTableHeaderRow.appendChild(document.createElement('th'));
+        glyphTableHeaderColumn.classList.add('talentTreeGlyphModalTableHeaderColumn');
+        glyphTableHeaderColumn.dataset.column = "level";
+        glyphTableHeaderColumn.innerText = "Level";
+        glyphTableHeaderColumn.style.width = "64px";
+
+        var glyphTableBody = glyphTable.appendChild(document.createElement('tbody'));
+        glyphTableBody.classList.add('talentTreeGlyphModalTableBody');
+
+        this.glyphModal = glyphModal;
+    }
+
+    closeGlyphModal() {
+        this.glyphModal.classList.add('hidden');
+        document.body.classList.remove('talentTreeModalOpen');
+    }
+
     buildGlyphTable(className) {
         var self = this;
 
+        this.className = className;
         var glyphTable;
         var existingGlyphTables = this.element.getElementsByClassName("glyphTable");
         if (existingGlyphTables.length > 0) {
@@ -810,12 +921,12 @@ class TalentTreeCalculator {
         glyphListHeader.classList.add('glyphListHeader');
         glyphListHeader.innerText = glyphType[0].toUpperCase() + glyphType.slice(1);
 
-        this.buildGlyphRow(glyphList, className, glyphType);
-        this.buildGlyphRow(glyphList, className, glyphType);
-        this.buildGlyphRow(glyphList, className, glyphType);
+        this.buildGlyphRow(glyphList, className, glyphType, 0);
+        this.buildGlyphRow(glyphList, className, glyphType, 1);
+        this.buildGlyphRow(glyphList, className, glyphType, 2);
     }
 
-    buildGlyphRow(glyphList, className, glyphType) {
+    buildGlyphRow(glyphList, className, glyphType, position) {
         var self = this;
 
         var glyphRow = glyphList.appendChild(document.createElement('div'));
@@ -823,15 +934,15 @@ class TalentTreeCalculator {
 
         var glyphAnchor = glyphRow.appendChild(document.createElement('a'));
         glyphAnchor.classList.add('glyphAnchor');
-        glyphAnchor.setAttribute('href', '#');
-        glyphAnchor.setAttribute('rel', '');
         glyphAnchor.dataset.class = className;
         glyphAnchor.dataset.type = glyphType;
-        glyphAnchor.dataset.bsToggle = "modal";
-        glyphAnchor.dataset.bsTarget = "#exampleModal";
+        glyphAnchor.dataset.position = position;
 
         glyphAnchor.addEventListener("click", function(event) {
-            self.openGlyphModal(className, glyphType);
+            var element = event.target.classList.contains('glyphAnchor') ? 
+                event.target : 
+                event.target.closest('.glyphAnchor');
+            self.openGlyphModal(className, glyphType, element.dataset.position);
         });
 
         var glyphImg = glyphAnchor.appendChild(document.createElement('div'));
@@ -843,30 +954,397 @@ class TalentTreeCalculator {
         glyphName.innerText = "Empty";
     }
 
-    openGlyphModal(className, glyphType) {
-        if (this.glyphData[className] == undefined) throw "Class not found in Glyph Data";
-        if (this.glyphData[className][glyphType] == undefined) throw "Glyph Type not found in Glyph Data";
+    openGlyphModal(className, glyphType, glyphPosition) {
+        if (this.glyphsData[className] == undefined) throw "Class not found in Glyph Data";
+        if (this.glyphsData[className][glyphType] == undefined) throw "Glyph Type not found in Glyph Data";
 
-        var glyphs = this.glyphData[className][glyphType];
-        console.log(glyphs);
+        this.glyphModal.dataset.class = className;
+        this.glyphModal.dataset.type = glyphType;
+        this.glyphModal.dataset.position = glyphPosition;
 
-        //document.getElementById("backdrop").style.display = "block";
-        //document.getElementById("exampleModal").style.display = "block";
-        //document.getElementById("exampleModal").classList.add("show");
+        var glyphs = this.glyphsData[className][glyphType];
+        this.updateGlyphModalList(glyphs, null, null);
+        this.glyphModal.classList.remove('hidden');
+        
+        document.body.classList.add('talentTreeModalOpen');
+    }
+
+    updateGlyphModalList(glyphs, nameFilter, sort) {
+        var self = this;
+
+        var glyphModalTableBody = this.glyphModal.getElementsByClassName('talentTreeGlyphModalTableBody')[0];
+
+        var existingGlyphRowElements = glyphModalTableBody.getElementsByClassName('talentTreeGlyphModalTableRow');
+        var keyedGlyphRowElements = {};
+        Array.prototype.forEach.call(existingGlyphRowElements, function(glyphRowElement) {
+            if (nameFilter == null || glyphRowElement.dataset.name.contains(nameFilter)) {
+                var key = glyphRowElement.dataset.itemId;
+                keyedGlyphRowElements[key] = glyphRowElement;
+            }
+        });
+
+        var glyphRowElement;
+        var glyphRowElements = [this.createGlyphModalRowElement(null)];
+        Object.values(glyphs).forEach(function (glyphData) {
+            if (keyedGlyphRowElements[glyphData.id] != undefined) {
+                glyphRowElement = keyedGlyphRowElements[glyphData.id];
+            } else {
+                glyphRowElement = self.createGlyphModalRowElement(glyphData);
+            }
+
+            if ((self.userGlyphs.major.includes(glyphData.id) ||
+                self.userGlyphs.minor.includes(glyphData.id))) {
+                glyphRowElement.classList.add('locked');
+            } else {
+                glyphRowElement.classList.remove('locked');
+            }
+
+            glyphRowElements.push(glyphRowElement);
+        });
+
+        glyphModalTableBody.innerHTML = null;
+        glyphRowElements.forEach(function (glyphRowElement) {
+            glyphModalTableBody.appendChild(glyphRowElement);
+        });
+    }
+
+    createGlyphModalRowElement(glyphData) {
+        var self = this;
+
+        var glyphRowElement = document.createElement('tr');
+        glyphRowElement.classList.add('talentTreeGlyphModalTableRow');
+        glyphRowElement.dataset.itemId = glyphData ? glyphData.id : null;
+
+        var glyphColumnElement = glyphRowElement.appendChild(document.createElement('td'));
+        glyphColumnElement.classList.add('talentTreeGlyphModalTableColumn');
+        
+        var glyphColumnImage = glyphColumnElement.appendChild(document.createElement('div'));
+        glyphColumnImage.classList.add('talentTreeGlyphModalGlyphImg');
+        glyphColumnImage.style.backgroundImage = "url('" + this.baseUrl + "inventoryslot_empty.jpg')";
+
+        glyphColumnElement = glyphRowElement.appendChild(document.createElement('td'));
+        glyphColumnElement.classList.add('talentTreeGlyphModalTableColumn', 'talentTreeGlyphModalGlyphName');
+        
+        var glyphNameElement = glyphColumnElement.appendChild(document.createElement('a'));
+        glyphNameElement.innerText = glyphData ? glyphData.id : "None";
+        if (glyphData) glyphNameElement.setAttribute('rel', 'item=' + glyphData.id);
+
+        glyphColumnElement = glyphRowElement.appendChild(document.createElement('td'));
+        glyphColumnElement.classList.add('talentTreeGlyphModalTableColumn', 'talentTreeGlyphModalGlyphDescription');
+        //glyphColumnElement.innerText = glyphData.id;
+
+        glyphColumnElement = glyphRowElement.appendChild(document.createElement('td'));
+        glyphColumnElement.classList.add('talentTreeGlyphModalTableColumn', 'talentTreeGlyphModalGlyphLevel');
+        //glyphColumnElement.innerText = glyphData.id;
+
+        glyphRowElement.addEventListener('click', function(event) {
+            var element = event.target.classList.contains('talentTreeGlyphModalTableRow') ? 
+                event.target : 
+                event.target.closest('.talentTreeGlyphModalTableRow');
+            
+            var params = {
+                id: element.dataset.itemId == 'null' ? null : parseInt(element.dataset.itemId),
+                class: self.glyphModal.dataset.class,
+                type: self.glyphModal.dataset.type,
+                position: parseInt(self.glyphModal.dataset.position)
+            };
+            
+            if ((self.userGlyphs.major.includes(params.id) ||
+                self.userGlyphs.minor.includes(params.id)) &&
+                params.id != null &&
+                self.userGlyphs[params.type][params.position] != params.id) return;
+
+            self.updateUserGlyph(params);
+            self.closeGlyphModal();
+        });
+
+        return glyphRowElement;
+    }
+
+    updateUserGlyph(params) {
+        var glyphData = this.getGlyphData(params);
+        var glyphAnchor = this.element.querySelectorAll('.glyphAnchor[data-type="' + params.type + '"]')[params.position];
+
+        var glyphImgElement = glyphAnchor.getElementsByClassName('glyphImg')[0];
+        glyphImgElement.style.backgroundImage = "url('" + this.baseUrl + "inventoryslot_empty.jpg')";
+
+        var glyphNameElement = glyphAnchor.getElementsByClassName('glyphName')[0];
+        if (glyphData == null) {
+            glyphNameElement.innerText = "Empty";
+            glyphAnchor.setAttribute('rel', '');
+        } else {
+            glyphNameElement.innerText = glyphData.id;
+            glyphAnchor.setAttribute('rel', 'item=' + glyphData.id);
+        }
+
+        this.userGlyphs[params.type][params.position] = params.id;
+        this.userGlyphsUpdateEvent();
+    }
+
+    getGlyphData(params) {
+        if (params.id == null) return;
+        return this.glyphsData[params.class][params.type][parseInt(params.id)];
     }
 
     clearGlyphTable() {
         var self = this;
-        var glyphAnchors = this.element.querySelector('.glyphAnchor');
-        if (glyphAnchors == null) return;
-
+        var glyphAnchors = this.element.querySelectorAll('.glyphAnchor');
         Array.prototype.forEach.call(glyphAnchors, function(glyphAnchor) {
-            var glyphImg = glyphAnchor.getElementByClassName('glyphImg')[0];
+            glyphAnchor.setAttribute('rel', '');
+            var glyphImg = glyphAnchor.getElementsByClassName('glyphImg')[0];
             glyphImg.style.backgroundImage = "url('" + self.baseUrl + "inventoryslot_empty.jpg')";
             
-            var glyphName = glyphAnchor.getElementByClassName('glyphName')[0];
+            var glyphName = glyphAnchor.getElementsByClassName('glyphName')[0];
             glyphName.innerText = "Empty";
         });
+
+        this.userGlyphs.major = [null, null, null];
+        this.userGlyphs.minor = [null, null, null];
+
+        this.userGlyphsUpdateEvent();
+    }
+
+    exportToUrl() {
+        var urlString = '';
+
+        var className = this.userPointHistory[0].split(':')[0];
+        var classKeys = Object.keys(this.classData);
+        urlString += 'c=' + classKeys.indexOf(className);
+
+        var i;
+        if (this.userPointHistory.length > 0) {
+            urlString += '&t=';
+            var talentString = '';
+            var currentSpecIndex = -1;
+            var specKeys = Object.keys(this.classData[className]);
+            var specs = ['A','B','C'];
+            var talents = [
+                0,1,2,3,4,5,6,7,8,9,
+                'a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z',
+                'D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z'
+            ];
+            this.userPointHistory.forEach(function(userPoint) {
+                var split = userPoint.split(':');
+                var specIndex = specKeys.indexOf(split[1]);
+                if (specIndex != currentSpecIndex) {
+                    currentSpecIndex = specIndex;
+                    talentString += specs[currentSpecIndex];
+                }
+                var talentIndex = (parseInt(split[2]) * 4) + parseInt(split[3]);
+                talentString += talents[talentIndex];
+            });
+
+            var compressedTalentString = '';
+            for (i = 0; i < talentString.length; i++) {
+                if (specs.indexOf(talentString[i]) >= 0) {
+                    compressedTalentString += talentString[i];
+                    continue;
+                }
+                var count = 1;
+                for (var j = i + 1; j < talentString.length; j++) {
+                    if (talentString[j] != talentString[i]) break;
+                    count++;
+                }
+                compressedTalentString += talentString[i] + count;
+                i += count - 1;
+            }
+
+            urlString += compressedTalentString;
+        }
+
+        var glyphString = '';
+        var majors = ['A','B','C'];
+        var minors = ['D','E','F'];
+        var majorKeys = Object.keys(this.glyphsData[className].major);
+        var minorKeys = Object.keys(this.glyphsData[className].minor);
+        for (i = 0; i < this.userGlyphs.major.length; i++) {
+            if (this.userGlyphs.major[i] != null) {
+                glyphString += majors[i] + majorKeys.indexOf(this.userGlyphs.major[i].toString());
+            }
+        }
+        for (i = 0; i < this.userGlyphs.major.length; i++) {
+            if (this.userGlyphs.minor[i] != null) {
+                glyphString += minors[i] + minorKeys.indexOf(this.userGlyphs.minor[i].toString());
+            }
+        }
+
+        if (glyphString.length > 0) {
+            urlString += '&g=' + glyphString;
+        }
+
+        this.importFromUrl(urlString);
+        return urlString;
+    }
+
+    importFromUrl(urlString)
+    {
+        var self = this;
+        var userPointHistory = [];
+        var userSpentPoints = {};
+        var userGlyphs = {
+            major: [null, null, null],
+            minor: [null, null, null]
+        };
+
+        var char;
+        var params = this.getParamsFromString(urlString);
+        if (params == null) return;
+
+        var talentString = '';
+        var className = Object.keys(this.classData)[parseInt(params['c'])];
+        var i;
+        
+        if (params['t'] != undefined) {
+            var compressedTalentString = params['t'];
+            var uncompressedTalentString = '';
+            var specKeys = Object.keys(this.classData[className]);
+            var specs = ['A','B','C'];
+            var talents = [
+                0,1,2,3,4,5,6,7,8,9,
+                'a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z',
+                'D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z'
+            ];
+
+            for (i = 0; i < compressedTalentString.length; i++) {
+                if (specs.indexOf(compressedTalentString[i]) >= 0) {
+                    uncompressedTalentString += compressedTalentString[i];
+                    continue;
+                }
+
+                for (var j = 0; j < parseInt(compressedTalentString[i + 1]); j++) {
+                    uncompressedTalentString += compressedTalentString[i];
+                }
+                i++;
+            }
+
+            var currentSpecName = '';
+            for (i = 0; i < uncompressedTalentString.length; i++) {
+                char = uncompressedTalentString[i];
+                if (specs.indexOf(char) >= 0) {
+                    var specIndex = specs.indexOf(char);
+                    currentSpecName = Object.keys(this.classData[className])[specIndex];
+                    continue;
+                }
+
+                var talentNumber = talents.indexOf(char);
+                if (talentNumber < 0) talentNumber = talents.indexOf(parseInt(char));
+                var row = Math.floor(talentNumber / 4);
+                var column = talentNumber % 4;
+
+                if (userSpentPoints[currentSpecName] == undefined) userSpentPoints[currentSpecName] = [];
+                if (userSpentPoints[currentSpecName][row] == undefined) userSpentPoints[currentSpecName][row] = [];
+                if (userSpentPoints[currentSpecName][row][column] == undefined) userSpentPoints[currentSpecName][row][column] = 0;
+                userSpentPoints[currentSpecName][row][column]++;
+                var key = className + ':' +
+                currentSpecName + ':' +
+                row + ':' +
+                column + ':' +
+                userSpentPoints[currentSpecName][row][column];
+                userPointHistory.push(key);
+            }
+
+            this.userPointHistory = userPointHistory;
+            this.userSpentPoints = userSpentPoints;
+
+            // Build tables
+            Object.keys(userSpentPoints).forEach(function(specName) {
+                var tableElement = self.element.querySelector('.talentTable[data-spec="' + specName + '"]');
+                if (tableElement != null) {
+                    self.buildSpec(parseInt(tableElement.dataset.specNumber), className, specName);
+                } else {
+                    var tableElements = self.element.getElementsByClassName('talentTable');
+                    self.buildSpec(tableElements.length, className, specName);
+                }
+
+                Object.keys(userSpentPoints[specName]).forEach(function(row) {
+                    var rowData = userSpentPoints[specName][row];
+                    Object.keys(rowData).forEach(function(column) {
+                        var talentAnchor = self.element.querySelector('.talentAnchor[data-spec="' + specName + '"][data-row="' + row + '"][data-column="' + column + '"]');
+                        if (talentAnchor != null) {
+                            self.updateTalentAnchor(talentAnchor, rowData[column]);
+                        }
+                    });
+                });
+
+                self.updateTalentTableHeader(specName);
+                self.updateLocks(specName);
+            });
+
+            this.userPointHistoryUpdateEvent();
+        }
+
+        if (params['g'] != undefined) {
+            var glyphString = params['g'];
+
+            var majors = ['A','B','C'];
+            var minors = ['D','E','F'];
+            var currentGlyphType = '';
+            var currentGlyphPosition = -1;
+            var currentString = '';
+            var itemId = null;
+            for (i = 0; i < glyphString.length; i++) {
+                char = glyphString[i];
+                if (majors.indexOf(char) >= 0 ||
+                    minors.indexOf(char) >= 0) {
+
+                    if (currentString.length > 0) {
+                        itemId = Object.keys(this.glyphsData[className][currentGlyphType])[parseInt(currentString)];
+                        userGlyphs[currentGlyphType][currentGlyphPosition] = parseInt(itemId);
+                        currentString = '';
+                    }
+
+                    if (majors.indexOf(char) >= 0) {
+                        currentGlyphType = 'major';
+                        currentGlyphPosition = majors.indexOf(char);
+                    } else if (minors.indexOf(char) >= 0) {
+                        currentGlyphType = 'minor';
+                        currentGlyphPosition = minors.indexOf(char);
+                    }
+                    continue;
+                }
+
+                currentString += char;
+            }
+            if (currentString.length > 0) {
+                itemId = Object.keys(this.glyphsData[className][currentGlyphType])[parseInt(currentString)];
+                userGlyphs[currentGlyphType][currentGlyphPosition] = parseInt(itemId);
+            }
+
+            this.buildGlyphTable(className);
+            this.userGlyphs = userGlyphs;
+
+            Object.keys(userGlyphs).forEach(function(glyphType) {
+                i = 0;
+                userGlyphs[glyphType].forEach(function(itemId) {
+                    var glyphParams = {
+                        id: itemId,
+                        class: className,
+                        type: glyphType,
+                        position: i++
+                    };
+                    self.updateUserGlyph(glyphParams);
+                });
+            });
+
+            this.userGlyphsUpdateEvent();
+        }
+    }
+    
+    getParamsFromString(paramString) {
+        if (paramString.indexOf('=') == -1) return null;
+        var stringSplit = paramString.split('?');
+        paramString = (stringSplit.length >= 2) ? stringSplit[1] : stringSplit[0];
+        var paramStringSplit = paramString.split('&');
+
+        var params = {};
+
+        for (var i = 0; i < paramStringSplit.length; i++) {
+            var paramPair = paramStringSplit[i].split('=');
+            if (paramPair.length != 2) throw 'Invalid parameter string format';
+            params[paramPair[0]] = paramPair[1];
+        }
+
+        return params;
     }
 
     userPointHistoryUpdateEvent() {
@@ -878,5 +1356,16 @@ class TalentTreeCalculator {
 
     subscribeToUserPointHistoryUpdateEvent(object, callback) {
         this.userPointHistoryUpdateEventSubscribers.push(callback.bind(object));
+    }
+
+    userGlyphsUpdateEvent() {
+        var self = this;
+        this.userGlyphsUpdateEventSubscribers.forEach(function(callback) {
+            callback(self.userGlyphs);
+        });
+    }
+
+    subscribeToUserGlyphsUpdateEvent(object, callback) {
+        this.userGlyphsUpdateEventSubscribers.push(callback.bind(object));
     }
 }

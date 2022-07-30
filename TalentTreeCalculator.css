@@ -1,3 +1,11 @@
+*, ::after, ::before {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+}
+
 .talentTreeCalculator {
     position: relative;
 }
@@ -280,4 +288,137 @@
     font-weight: bolder;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     vertical-align: middle;
+}
+
+.talentTreeGlyphModal {
+    position: fixed;
+    display: block;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 100;
+    overflow-x: hidden;
+    overflow-y: auto;
+    transition: opacity 0.15s linear;
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+body.talentTreeModalOpen {
+    overflow: hidden;
+    position: fixed;
+}
+
+.talentTreeGlyphModal.hidden {
+    opacity: 0;
+    display: none;
+}
+
+.talentTreeGlyphModal .talentTreeGlyphModalDialog {
+    position: relative;
+    background-color: rgb(25, 25, 25);
+    padding: 20px;
+    max-width: 800px;
+    margin-left: auto;
+    margin-right: auto;
+    height: 480px;
+    border-radius: 4px;
+    margin-top: 20px;
+}
+
+.talentTreeGlyphModal .talentTreeGlyphModalSearch {
+    position: relative;
+    display: inline-block;
+}
+
+.talentTreeGlyphModal .talentTreeGlyphModalSearchIcon {
+    position: absolute;
+    display: inline-block;
+    top: 8px;
+    right: 8px;
+    pointer-events: none;
+}
+
+.talentTreeGlyphModal .talentTreeGlyphModalSearchClear {
+    position: absolute;
+    display: inline-block;
+    top: 2px;
+    right: 8px;
+    width: 16px;
+    cursor: pointer;
+}
+
+.talentTreeGlyphModal .talentTreeGlyphModalSearchInput {
+    width: 240px;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 14px;
+    max-width: 100%;
+    border: none;
+}
+
+.talentTreeGlyphModal .talentTreeGlyphModalClose {
+    position: relative;
+    width: 24px;
+    float: right;
+    cursor: pointer;
+    pointer-events: all;
+    color: white;
+}
+
+.talentTreeGlyphModal .talentTreeGlyphModalHeader {
+    margin-bottom: 20px;
+}
+
+.talentTreeGlyphModal .talentTreeGlyphModalBody {
+    overflow-y: auto;
+    color: white;
+    height: 400px;
+}
+
+.talentTreeGlyphModal .talentTreeGlyphModalTable {
+    width: 100%;
+}
+
+.talentTreeGlyphModal .talentTreeGlyphModalTableRow {
+    cursor: pointer;
+}
+
+.talentTreeGlyphModal .talentTreeGlyphModalTableRow:nth-child(odd) {
+    background-color: rgba(255,255,255,0.1);
+}
+
+.talentTreeGlyphModal .talentTreeGlyphModalTableRow:hover {
+    background-color: rgba(255,255,255,0.25);
+}
+
+.talentTreeGlyphModal .talentTreeGlyphModalTableRow.locked {
+    color: gray;
+    background-color: rgba(255,255,255,0.05);
+}
+
+.talentTreeGlyphModal .talentTreeGlyphModalTableColumn {
+    padding: 5px;
+}
+
+.talentTreeGlyphModal .talentTreeGlyphModalGlyphImg {
+    background-repeat: no-repeat;
+    background-size: cover;
+    width: 20px;
+    height: 20px;
+}
+
+.talentTreeGlyphModal ::-webkit-scrollbar {
+    width: 13px;
+}
+
+.talentTreeGlyphModal ::-webkit-scrollbar-corner {
+    background: black;
+}
+.talentTreeGlyphModal ::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.3);
+    border-radius: 5px;
+}
+.talentTreeGlyphModal ::-webkit-scrollbar-track {
+    background: rgba(255,255,255,0.05);
 }
