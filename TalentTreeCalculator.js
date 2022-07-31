@@ -21,9 +21,11 @@ class TalentTreeCalculator {
     classData;
     talentData;
     glyphsData;
+    isLocked = false;
 
     userPointHistoryUpdateEventSubscribers = [];
     userGlyphsUpdateEventSubscribers = [];
+    userClassUpdateEventSubscribers = [];
 
     constructor(target, classData, talentData, glyphsData, imageParams) {
         if (!target) throw 'Could not construct TalentTreeCalculator: Element not found';
@@ -94,18 +96,53 @@ class TalentTreeCalculator {
         this.tooltip = document.getElementById(this.tooltipId);
     }
 
+    setLock(isLocked) {
+        var self = this;
+        this.isLocked = isLocked;
+        var specClears = this.element.getElementsByClassName('talentTableClear');
+        var glyphClears = this.element.getElementsByClassName('glyphTableClear');
+
+        if (this.isLocked) {
+            Array.prototype.forEach.call(specClears, function(specClear) {
+                specClear.classList.add('hidden');
+            });
+            Array.prototype.forEach.call(glyphClears, function(glyphClear) {
+                glyphClear.classList.add('hidden');
+            });
+        } else {
+            Array.prototype.forEach.call(specClears, function(specClear) {
+                specClear.classList.remove('hidden');
+            });
+            Array.prototype.forEach.call(glyphClears, function(glyphClear) {
+                glyphClear.classList.remove('hidden');
+            });
+        }
+        
+        Object.keys(this.talentData[this.className]).forEach(function(specName) {
+            self.updateLocks(specName);
+        });
+    }
+
     buildClass(className) {
         var self = this;
+        
+        if (this.isLocked) return;
+        
         var specs = this.classData[className].specs;
         var i = 0;
         Object.keys(specs).forEach(function(specName) {
             self.buildSpec(i++, className, specName);
         });
         this.buildGlyphTable(className);
+        this.className = className;
+        this.userClassUpdateEvent();
     }
 
     buildSpec(number, className, specName) {
         var self = this;
+
+        if (this.isLocked) return;
+
         this.className = className;
         var specData = this.talentData[className][specName];
 
@@ -402,6 +439,9 @@ class TalentTreeCalculator {
 
     addTalentRank(talentAnchor) {
         var self = this;
+
+        if (this.isLocked) return;
+
         if (this.getUserSpentPoints() + 1 > this.maxUserSpentPoints) return;
         
         var talentData = this.talentData[talentAnchor.dataset.class][talentAnchor.dataset.spec][talentAnchor.dataset.row][talentAnchor.dataset.column];
@@ -452,6 +492,9 @@ class TalentTreeCalculator {
 
     subtractTalentRank(talentAnchor) {
         var self = this;
+
+        if (this.isLocked) return;
+
         if (talentAnchor.dataset.rank <= 0) return;
 
         var params = {
@@ -528,6 +571,8 @@ class TalentTreeCalculator {
 
     clearTalentTable(className, specName) {
         var self = this;
+
+        if (this.isLocked) return;
 
         var talentAnchors = this.element.querySelectorAll('.talentAnchor[data-spec="' + specName + '"]');
         Array.prototype.forEach.call(talentAnchors, function(talentAnchor) {
@@ -630,10 +675,16 @@ class TalentTreeCalculator {
                 class: talentAnchor.dataset.class,
                 spec: talentAnchor.dataset.spec,
                 specNumber: parseInt(talentAnchor.dataset.number),
-                "row": parseInt(talentAnchor.dataset.row),
-                "column": parseInt(talentAnchor.dataset.column),
+                row: parseInt(talentAnchor.dataset.row),
+                column: parseInt(talentAnchor.dataset.column),
                 rank: parseInt(talentAnchor.dataset.rank)
-            }
+            };
+            
+            // Locked by user or they've spent all points
+            var isSoftLocked = self.userPointHistory.length >= self.maxUserSpentPoints || self.isLocked;
+
+            // If there's no ranks in this talent and it's softLocked, lock it
+            isLocked = parseInt(talentAnchor.dataset.rank) == 0 && isSoftLocked;
             
             if (spentPoints < talentParams.row * 5) {
                 isLocked = true;
@@ -918,6 +969,8 @@ class TalentTreeCalculator {
     buildGlyphTable(className) {
         var self = this;
 
+        if (this.isLocked) return;
+
         this.className = className;
         var glyphTable;
         var existingGlyphTables = this.element.getElementsByClassName("glyphTable");
@@ -1003,6 +1056,8 @@ class TalentTreeCalculator {
     openGlyphModal(className, glyphType, glyphPosition) {
         if (this.glyphsData[className] == undefined) throw "Class not found in Glyph Data";
         if (this.glyphsData[className][glyphType] == undefined) throw "Glyph Type not found in Glyph Data";
+
+        if (this.isLocked) return;
 
         this.glyphModal.dataset.class = className;
         this.glyphModal.dataset.type = glyphType;
@@ -1108,6 +1163,8 @@ class TalentTreeCalculator {
     }
 
     updateUserGlyph(params) {
+        if (this.isLocked) return;
+
         var glyphData = this.getGlyphData(params);
         var glyphAnchor = this.element.querySelectorAll('.glyphAnchor[data-type="' + params.type + '"]')[params.position];
 
@@ -1135,6 +1192,9 @@ class TalentTreeCalculator {
 
     clearGlyphTable() {
         var self = this;
+
+        if (this.isLocked) return;
+
         var glyphAnchors = this.element.querySelectorAll('.glyphAnchor');
         Array.prototype.forEach.call(glyphAnchors, function(glyphAnchor) {
             glyphAnchor.setAttribute('rel', '');
@@ -1219,7 +1279,6 @@ class TalentTreeCalculator {
             urlString += '&g=' + glyphString;
         }
 
-        this.importFromUrl(urlString);
         return urlString;
     }
 
@@ -1290,9 +1349,6 @@ class TalentTreeCalculator {
                 userPointHistory.push(key);
             }
 
-            this.userPointHistory = userPointHistory;
-            this.userSpentPoints = userSpentPoints;
-
             this.buildClass(className);
 
             // Build tables
@@ -1314,7 +1370,12 @@ class TalentTreeCalculator {
                         }
                     });
                 });
+            });
 
+            this.userPointHistory = userPointHistory;
+            this.userSpentPoints = userSpentPoints;
+
+            Object.keys(this.talentData[this.className]).forEach(function(specName) {
                 self.updateTalentTableHeader(specName);
                 self.updateLocks(specName);
             });
@@ -1416,5 +1477,16 @@ class TalentTreeCalculator {
 
     subscribeToUserGlyphsUpdateEvent(object, callback) {
         this.userGlyphsUpdateEventSubscribers.push(callback.bind(object));
+    }
+
+    userClassUpdateEvent() {
+        var self = this;
+        this.userClassUpdateEventSubscribers.forEach(function(callback) {
+            callback(self.className);
+        });
+    }
+
+    subscribeToUserClassUpdateEvent(object, callback) {
+        this.userClassUpdateEventSubscribers.push(callback.bind(object));
     }
 }
