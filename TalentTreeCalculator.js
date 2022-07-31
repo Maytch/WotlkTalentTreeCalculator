@@ -4,7 +4,12 @@ class TalentTreeCalculator {
     tooltipId;
     tooltip;
     glyphModal;
-    baseUrl = './/Images//';
+    imageParams = {
+        icon: ".//Images//Icons",
+        iconFormat: "jpg",
+        background: ".//Images//Backgrounds//",
+        backgroundFormat: "jpg"
+    };
     className = '';
     userSpentPoints = {};
     userPointHistory = [];
@@ -14,19 +19,21 @@ class TalentTreeCalculator {
         minor: [null, null, null]
     };
     classData;
+    talentData;
     glyphsData;
 
     userPointHistoryUpdateEventSubscribers = [];
     userGlyphsUpdateEventSubscribers = [];
 
-    constructor(target, classData, glyphsData, baseUrl) {
+    constructor(target, classData, talentData, glyphsData, imageParams) {
         if (!target) throw 'Could not construct TalentTreeCalculator: Element not found';
         this.classData = classData;
+        this.talentData = talentData;
         this.glyphsData = glyphsData;
         this.initTalentTree(target);
         this.initTooltip();
         this.initGlyphModal();
-        if (baseUrl != undefined) this.baseUrl = baseUrl;
+        if (imageParams != undefined) this.imageParams = imageParams;
     }
 
     initTalentTree(target) {
@@ -87,10 +94,20 @@ class TalentTreeCalculator {
         this.tooltip = document.getElementById(this.tooltipId);
     }
 
+    buildClass(className) {
+        var self = this;
+        var specs = this.classData[className].specs;
+        var i = 0;
+        Object.keys(specs).forEach(function(specName) {
+            self.buildSpec(i++, className, specName);
+        });
+        this.buildGlyphTable(className);
+    }
+
     buildSpec(number, className, specName) {
         var self = this;
         this.className = className;
-        var specData = this.classData[className][specName];
+        var specData = this.talentData[className][specName];
 
         var talentTable = this.initTalentTable(number, className, specName);
 
@@ -121,6 +138,7 @@ class TalentTreeCalculator {
 
         if (specData == null) return;
 
+        var buildArrows = [];
         for (var i = 0; i < specData.length; i++) {
             var row = talentTable.appendChild(document.createElement('div'));
             row.classList.add("talentRow");
@@ -178,7 +196,7 @@ class TalentTreeCalculator {
                 if (talentData.lockRules.length > 0 || i > 0) talentImg.classList.add("locked");
 
                 var imageName = talentData.icon;
-                talentImg.style.backgroundImage = "url('" + this.baseUrl + "//" + imageName;
+                talentImg.style.backgroundImage = this.getIconImageUrl(imageName);
 
                 var talentRanks = talentAnchor.appendChild(document.createElement('div'));
                 talentRanks.classList.add("talentRanks");
@@ -193,11 +211,36 @@ class TalentTreeCalculator {
                         "column": j,
                     };
                     talentData.lockRules.forEach(function(lockRule) {
-                        self.buildArrow(params, lockRule);
+                        buildArrows.push({
+                            params: params,
+                            lockRule: lockRule
+                        });
                     });
                 }
             }
         }
+
+        buildArrows.forEach(function(buildArrow) {
+            self.buildArrow(buildArrow.params, buildArrow.lockRule);
+        });
+
+        this.userPointHistory = [];
+        this.userSpentPoints = {};
+        this.userPointHistoryUpdateEvent();
+    }
+
+    getIconImageUrl(iconName) {
+        return "url('" + 
+            this.imageParams.icon + 
+            iconName + "." + this.imageParams.iconFormat +
+        "')";
+    }
+
+    getBackgroundImageUrl(backgroundName) {
+        return "url('" + 
+            this.imageParams.background + 
+            backgroundName + "." + this.imageParams.backgroundFormat +
+        "')";
     }
 
     buildArrow(params, lockRule) {
@@ -237,8 +280,8 @@ class TalentTreeCalculator {
             top = fromRect.top - elementRect.top + (height / 2) - 5;
 
             if (lockRule.column > params.column) {
-                left = toRect.right - element.left;
-                width = fromRect.left - toRect.right;
+                left = toRect.right - elementRect.left - (fromRect.right - fromRect.left) / 2 - 5;
+                width = fromRect.left - toRect.right + (fromRect.right - fromRect.left) / 2 + 5;
             }
 
             arrowSegment.style.left = left + 'px';
@@ -257,6 +300,7 @@ class TalentTreeCalculator {
             arrowSegment.style.width = '10px';
             arrowSegment.style.height = height + 'px';
             arrowSegment.style.top = top + 'px';
+            arrowSegment.style.borderTop = 'none';
 
             arrowEnd = arrowContainer.appendChild(document.createElement('div'));
             arrowEnd.classList.add('arrowEnd');
@@ -281,7 +325,7 @@ class TalentTreeCalculator {
             var pointLeft = false;
 
             if (lockRule.column > params.column) {
-                left = toRect.right - element.left;
+                left = toRect.right - elementRect.left;
                 width = fromRect.left - toRect.right;
                 pointLeft = true;
             }
@@ -299,6 +343,7 @@ class TalentTreeCalculator {
             left = toRect.left - elementRect.left - 15;
 
             if (pointLeft) {
+                left = toRect.right - elementRect.left - 15;
                 arrowEnd.classList.add('pointLeft');
             }
 
@@ -337,17 +382,16 @@ class TalentTreeCalculator {
     initTalentTable(number, className, specName) {
         var existingTalentTables = this.element.getElementsByClassName("talentTable");
         var talentTable;
-        var imageName = className + "_" + specName + "_background.jpg";
+        var imageName = this.classData[className].specs[specName].id;
 
         if (existingTalentTables.length > number) {
             talentTable = existingTalentTables[number];
             talentTable.innerHTML = null;
-            return talentTable;
         } else {
             talentTable = this.element.appendChild(document.createElement('div'));
         }
 
-        talentTable.style.backgroundImage = "url('" + this.baseUrl + imageName + "')";
+        talentTable.style.backgroundImage = this.getBackgroundImageUrl(imageName);
         talentTable.classList.add("talentTable");
         talentTable.dataset.class = className;
         talentTable.dataset.specNumber = number;
@@ -360,7 +404,7 @@ class TalentTreeCalculator {
         var self = this;
         if (this.getUserSpentPoints() + 1 > this.maxUserSpentPoints) return;
         
-        var talentData = this.classData[talentAnchor.dataset.class][talentAnchor.dataset.spec][talentAnchor.dataset.row][talentAnchor.dataset.column];
+        var talentData = this.talentData[talentAnchor.dataset.class][talentAnchor.dataset.spec][talentAnchor.dataset.row][talentAnchor.dataset.column];
         if (parseInt(talentAnchor.dataset.rank) + 1 > talentData.ranks.length) return;
 
         if (this.getUserSpentPointsInSpec(talentAnchor.dataset.spec) < talentAnchor.dataset.row * 5) {
@@ -370,7 +414,7 @@ class TalentTreeCalculator {
         var isLocked = false;
         if (talentData.lockRules.length > 0) {
             talentData.lockRules.forEach(function(lockRule) {
-                var otherTalentData = self.classData[talentAnchor.dataset.class][talentAnchor.dataset.spec][lockRule.row][lockRule.column];
+                var otherTalentData = self.talentData[talentAnchor.dataset.class][talentAnchor.dataset.spec][lockRule.row][lockRule.column];
 
                 if (self.getUserSpentPointsInTalent(talentAnchor.dataset.spec, lockRule.row, lockRule.column) < otherTalentData.ranks.length) {
                     isLocked = true;
@@ -424,9 +468,9 @@ class TalentTreeCalculator {
         var pointsUpToRow = 0;
         var pointsAfterRow = 0;
         var minPoints = 0;
-        for (i = 0; i < this.classData[params.class][params.spec].length; i++) {
+        for (i = 0; i < this.talentData[params.class][params.spec].length; i++) {
             var points = 0;
-            for (j = 0; j < this.classData[params.class][params.spec][i].length; j++) {
+            for (j = 0; j < this.talentData[params.class][params.spec][i].length; j++) {
                 if (this.userSpentPoints[params.spec][i] != undefined &&
                     this.userSpentPoints[params.spec][i][j] != undefined) {
                     points += this.userSpentPoints[params.spec][i][j];
@@ -442,13 +486,13 @@ class TalentTreeCalculator {
         if (pointsAfterRow > 0 && pointsUpToRow - 1 < minPoints) return;
 
         var canSubtract = true;
-        for (i = 0; i < this.classData[params.class][params.spec].length; i++) {
-            for (j = 0; j < this.classData[params.class][params.spec][i].length; j++) {
+        for (i = 0; i < this.talentData[params.class][params.spec].length; i++) {
+            for (j = 0; j < this.talentData[params.class][params.spec][i].length; j++) {
                 if (!canSubtract) break;
 
                 var spentPointsInTalent = this.getUserSpentPointsInTalent(params.spec, i, j);
 
-                var talentData = this.classData[params.class][params.spec][i][j];
+                var talentData = this.talentData[params.class][params.spec][i][j];
                 if (talentData == null || spentPointsInTalent <= 0) continue;
 
                 if (talentData.lockRules.length) {
@@ -505,7 +549,7 @@ class TalentTreeCalculator {
             
             if (talentData.lockRules.length > 0 && !isLocked) {
                 talentData.lockRules.forEach(function(lockRule) {
-                    var otherTalentData = self.classData[className][specName][lockRule.row][lockRule.column];
+                    var otherTalentData = self.talentData[className][specName][lockRule.row][lockRule.column];
 
                     if (self.getUserSpentPointsInTalent(specName, lockRule.row, lockRule.column) < otherTalentData.ranks.length) {
                         isLocked = true;
@@ -598,7 +642,7 @@ class TalentTreeCalculator {
             var talentData = self.getTalentData(talentParams);
             if (talentData.lockRules.length > 0 && !isLocked) {
                 talentData.lockRules.forEach(function(lockRule) {
-                    var otherTalentData = self.classData[talentParams.class][talentParams.spec][lockRule.row][lockRule.column];
+                    var otherTalentData = self.talentData[talentParams.class][talentParams.spec][lockRule.row][lockRule.column];
 
                     if (self.getUserSpentPointsInTalent(talentParams.spec, lockRule.row, lockRule.column) < otherTalentData.ranks.length) {
                         isLocked = true;
@@ -653,11 +697,11 @@ class TalentTreeCalculator {
     }
 
     getTalentData(params) {
-        if (this.classData[params.class] == undefined) throw 'Undefined classType specified';
-        if (this.classData[params.class][params.spec] == undefined) throw 'Undefined specName specified';
-        if (this.classData[params.class][params.spec][params.row] == undefined) throw 'Undefined row specified';
-        if (this.classData[params.class][params.spec][params.row][params.column] == undefined) throw 'Undefined column specified';
-        var talentData = this.classData[params.class][params.spec][params.row][params.column];
+        if (this.talentData[params.class] == undefined) throw 'Undefined classType specified';
+        if (this.talentData[params.class][params.spec] == undefined) throw 'Undefined specName specified';
+        if (this.talentData[params.class][params.spec][params.row] == undefined) throw 'Undefined row specified';
+        if (this.talentData[params.class][params.spec][params.row][params.column] == undefined) throw 'Undefined column specified';
+        var talentData = this.talentData[params.class][params.spec][params.row][params.column];
         return talentData;
     }
 
@@ -716,7 +760,7 @@ class TalentTreeCalculator {
 
             if (talentData.lockRules.length > 0) {
                 talentData.lockRules.forEach(function(lockRule) {
-                    var otherTalentData = self.classData[params.class][params.spec][lockRule.row][lockRule.column];
+                    var otherTalentData = self.talentData[params.class][params.spec][lockRule.row][lockRule.column];
 
                     if (self.getUserSpentPointsInTalent(params.spec, lockRule.row, lockRule.column) < otherTalentData.ranks.length) {
                         isLocked = true;
@@ -880,13 +924,13 @@ class TalentTreeCalculator {
         if (existingGlyphTables.length > 0) {
             glyphTable = existingGlyphTables[0];
             glyphTable.dataset.class = className;
-            this.clearGlyphTable();
-            return glyphTable;
+            glyphTable.innerHTML = null;
+        } else {
+            glyphTable = this.element.appendChild(document.createElement('div'));
+            glyphTable.classList.add("glyphTable");
+            glyphTable.dataset.class = className;
         }
 
-        glyphTable = this.element.appendChild(document.createElement('div'));
-        glyphTable.classList.add("glyphTable");
-        glyphTable.dataset.class = className;
 
         var glyphTableHeader = glyphTable.appendChild(document.createElement('div'));
         glyphTableHeader.classList.add('glyphTableHeader');
@@ -911,6 +955,8 @@ class TalentTreeCalculator {
 
         this.buildGlyphList(glyphTable, className, "major");
         this.buildGlyphList(glyphTable, className, "minor");
+        
+        this.userGlyphsUpdateEvent();
     }
 
     buildGlyphList(glyphTable, className, glyphType) {
@@ -947,7 +993,7 @@ class TalentTreeCalculator {
 
         var glyphImg = glyphAnchor.appendChild(document.createElement('div'));
         glyphImg.classList.add('glyphImg');
-        glyphImg.style.backgroundImage = "url('" + this.baseUrl + "inventoryslot_empty.jpg')";
+        glyphImg.style.backgroundImage = this.getIconImageUrl("inventoryslot_empty");
 
         var glyphName = glyphAnchor.appendChild(document.createElement('div'));
         glyphName.classList.add('glyphName');
@@ -1020,22 +1066,22 @@ class TalentTreeCalculator {
         
         var glyphColumnImage = glyphColumnElement.appendChild(document.createElement('div'));
         glyphColumnImage.classList.add('talentTreeGlyphModalGlyphImg');
-        glyphColumnImage.style.backgroundImage = "url('" + this.baseUrl + "inventoryslot_empty.jpg')";
+        if (glyphData) glyphColumnImage.style.backgroundImage = this.getIconImageUrl(glyphData.icon);
 
         glyphColumnElement = glyphRowElement.appendChild(document.createElement('td'));
         glyphColumnElement.classList.add('talentTreeGlyphModalTableColumn', 'talentTreeGlyphModalGlyphName');
         
         var glyphNameElement = glyphColumnElement.appendChild(document.createElement('a'));
-        glyphNameElement.innerText = glyphData ? glyphData.id : "None";
+        glyphNameElement.innerText = glyphData ? glyphData.name : "None";
         if (glyphData) glyphNameElement.setAttribute('rel', 'item=' + glyphData.id);
 
         glyphColumnElement = glyphRowElement.appendChild(document.createElement('td'));
         glyphColumnElement.classList.add('talentTreeGlyphModalTableColumn', 'talentTreeGlyphModalGlyphDescription');
-        //glyphColumnElement.innerText = glyphData.id;
+        if (glyphData) glyphColumnElement.innerText = glyphData.description;
 
         glyphColumnElement = glyphRowElement.appendChild(document.createElement('td'));
         glyphColumnElement.classList.add('talentTreeGlyphModalTableColumn', 'talentTreeGlyphModalGlyphLevel');
-        //glyphColumnElement.innerText = glyphData.id;
+        if (glyphData) glyphColumnElement.innerText = glyphData.level;
 
         glyphRowElement.addEventListener('click', function(event) {
             var element = event.target.classList.contains('talentTreeGlyphModalTableRow') ? 
@@ -1066,15 +1112,16 @@ class TalentTreeCalculator {
         var glyphAnchor = this.element.querySelectorAll('.glyphAnchor[data-type="' + params.type + '"]')[params.position];
 
         var glyphImgElement = glyphAnchor.getElementsByClassName('glyphImg')[0];
-        glyphImgElement.style.backgroundImage = "url('" + this.baseUrl + "inventoryslot_empty.jpg')";
-
         var glyphNameElement = glyphAnchor.getElementsByClassName('glyphName')[0];
+
         if (glyphData == null) {
             glyphNameElement.innerText = "Empty";
             glyphAnchor.setAttribute('rel', '');
+            glyphImgElement.style.backgroundImage = this.getIconImageUrl("inventoryslot_empty");
         } else {
-            glyphNameElement.innerText = glyphData.id;
+            glyphNameElement.innerText = glyphData.name;
             glyphAnchor.setAttribute('rel', 'item=' + glyphData.id);
+            glyphImgElement.style.backgroundImage = this.getIconImageUrl(glyphData.icon);
         }
 
         this.userGlyphs[params.type][params.position] = params.id;
@@ -1092,7 +1139,7 @@ class TalentTreeCalculator {
         Array.prototype.forEach.call(glyphAnchors, function(glyphAnchor) {
             glyphAnchor.setAttribute('rel', '');
             var glyphImg = glyphAnchor.getElementsByClassName('glyphImg')[0];
-            glyphImg.style.backgroundImage = "url('" + self.baseUrl + "inventoryslot_empty.jpg')";
+            glyphImg.style.backgroundImage = self.getIconImageUrl("inventoryslot_empty");
             
             var glyphName = glyphAnchor.getElementsByClassName('glyphName')[0];
             glyphName.innerText = "Empty";
@@ -1108,7 +1155,7 @@ class TalentTreeCalculator {
         var urlString = '';
 
         var className = this.userPointHistory[0].split(':')[0];
-        var classKeys = Object.keys(this.classData);
+        var classKeys = Object.keys(this.talentData);
         urlString += 'c=' + classKeys.indexOf(className);
 
         var i;
@@ -1116,7 +1163,7 @@ class TalentTreeCalculator {
             urlString += '&t=';
             var talentString = '';
             var currentSpecIndex = -1;
-            var specKeys = Object.keys(this.classData[className]);
+            var specKeys = Object.keys(this.talentData[className]);
             var specs = ['A','B','C'];
             var talents = [
                 0,1,2,3,4,5,6,7,8,9,
@@ -1191,13 +1238,13 @@ class TalentTreeCalculator {
         if (params == null) return;
 
         var talentString = '';
-        var className = Object.keys(this.classData)[parseInt(params['c'])];
+        var className = Object.keys(this.talentData)[parseInt(params['c'])];
         var i;
         
         if (params['t'] != undefined) {
             var compressedTalentString = params['t'];
             var uncompressedTalentString = '';
-            var specKeys = Object.keys(this.classData[className]);
+            var specKeys = Object.keys(this.talentData[className]);
             var specs = ['A','B','C'];
             var talents = [
                 0,1,2,3,4,5,6,7,8,9,
@@ -1222,7 +1269,7 @@ class TalentTreeCalculator {
                 char = uncompressedTalentString[i];
                 if (specs.indexOf(char) >= 0) {
                     var specIndex = specs.indexOf(char);
-                    currentSpecName = Object.keys(this.classData[className])[specIndex];
+                    currentSpecName = Object.keys(this.talentData[className])[specIndex];
                     continue;
                 }
 
@@ -1245,6 +1292,8 @@ class TalentTreeCalculator {
 
             this.userPointHistory = userPointHistory;
             this.userSpentPoints = userSpentPoints;
+
+            this.buildClass(className);
 
             // Build tables
             Object.keys(userSpentPoints).forEach(function(specName) {

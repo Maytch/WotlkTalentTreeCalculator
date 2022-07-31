@@ -3,14 +3,12 @@ class TalentTreeHistory {
     element;
     talentHistoryList;
     talentTreeCalculator;
-    baseUrl = './/Images//';
     userPointHistory = [];
 
-    constructor(target, talentTreeCalculator, baseUrl) {
+    constructor(target, talentTreeCalculator) {
         if (!target) throw 'Could not construct TalentTreeHistory: Element not found';
         this.talentTreeCalculator = talentTreeCalculator;
         this.initTalentTreeHistory(target);
-        if (baseUrl != undefined) this.baseUrl = baseUrl;
     }
 
     initTalentTreeHistory(target) {
@@ -109,7 +107,7 @@ class TalentTreeHistory {
         talentImg.classList.add("talentImg");
 
         var imageName = talentData.icon;
-        talentImg.style.backgroundImage = "url('" + this.baseUrl + "//" + imageName;
+        talentImg.style.backgroundImage = this.talentTreeCalculator.getIconImageUrl(imageName);
 
         var talentDescription = talentAnchor.appendChild(document.createElement('div'));
         talentDescription.classList.add('talentName');
