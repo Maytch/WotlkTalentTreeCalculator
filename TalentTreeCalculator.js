@@ -1003,7 +1003,6 @@ class TalentTreeCalculator {
 
     closeGlyphModal() {
         this.glyphModal.classList.add('hidden');
-        document.body.classList.remove('talentTreeModalOpen');
     }
 
     buildGlyphTable(className) {
@@ -1106,8 +1105,6 @@ class TalentTreeCalculator {
         var glyphs = this.glyphsData[className][glyphType];
         this.updateGlyphModalList(glyphs, null, null);
         this.glyphModal.classList.remove('hidden');
-        
-        //document.body.classList.add('talentTreeModalOpen');
     }
 
     updateGlyphModalList(glyphs, nameFilter, sort) {
