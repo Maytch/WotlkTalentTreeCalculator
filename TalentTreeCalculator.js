@@ -22,6 +22,7 @@ class TalentTreeCalculator {
     talentData;
     glyphsData;
     isLocked = false;
+    glyphSearchTypingTimer;
 
     userPointHistoryUpdateEventSubscribers = [];
     userGlyphsUpdateEventSubscribers = [];
@@ -886,11 +887,6 @@ class TalentTreeCalculator {
 
         var glyphModal = this.element.appendChild(document.createElement('div'));
         glyphModal.classList.add('talentTreeGlyphModal', 'hidden');
-
-        glyphModal.addEventListener("click", function(event) {
-            if(event.target !== event.currentTarget) return;
-            self.closeGlyphModal();
-        });
         
         var glyphDialog = glyphModal.appendChild(document.createElement('div'));
         glyphDialog.classList.add('talentTreeGlyphModalDialog');
@@ -910,10 +906,31 @@ class TalentTreeCalculator {
         var glyphSearchClear = glyphSearch.appendChild(document.createElement('div'));
         glyphSearchClear.classList.add('talentTreeGlyphModalSearchClear');
         glyphSearchClear.innerHTML = '<svg viewBox="45.62 12.774 333.334 332.725" xmlns="http://www.w3.org/2000/svg"><rect x="193.431" y="77.859" width="38.321" height="194.039" rx="9" ry="9" style="fill: currentColor; stroke: none;" transform="matrix(0.707108, 0.707106, -0.707106, 0.707108, 185.924316, -99.10424)"/><rect x="193.431" y="77.859" width="38.321" height="194.039" rx="9" ry="9" style="fill: currentColor; stroke: none;" transform="matrix(0.707106, -0.707108, 0.707108, 0.707106, -60.479069, 202.458252)"/><ellipse style="stroke: currentColor; fill: none; stroke-width: 27px;" cx="212.287" cy="178.629" rx="149.635" ry="149.635"/></svg>';
+        glyphSearchClear.addEventListener('click', function(event) {
+            var element = event.target.classList.contains('talentTreeGlyphModalSearchClear') ? 
+                event.target : 
+                event.target.closest('.talentTreeGlyphModalSearchClear');
+
+            clearTimeout(self.glyphSearchTypingTimer);
+            self.clearSearchGlyphModal();
+        });
 
         var glyphSearchInput = glyphSearch.appendChild(document.createElement('input'));
         glyphSearchInput.classList.add('talentTreeGlyphModalSearchInput');
         glyphSearchInput.setAttribute('placeholder', 'Search for Glphys...');
+
+        glyphSearchInput.addEventListener('keyup', function(event) {
+            var element = event.target.classList.contains('talentTreeGlyphModalSearchInput') ? 
+                event.target : 
+                event.target.closest('.talentTreeGlyphModalSearchInput');
+
+            clearTimeout(self.glyphSearchTypingTimer);
+            if (element.value.length > 0) {
+                self.glyphSearchTypingTimer = setTimeout(self.searchGlyphModal, 600, self);
+            } else {
+                self.clearSearchGlyphModal();
+            }
+        });
 
         var glyphClose = glyphHeader.appendChild(document.createElement('div'));
         glyphClose.classList.add('talentTreeGlyphModalClose');
@@ -959,6 +976,29 @@ class TalentTreeCalculator {
         glyphTableBody.classList.add('talentTreeGlyphModalTableBody');
 
         this.glyphModal = glyphModal;
+    }
+    
+    searchGlyphModal(self) {
+        var searchText = self.element.getElementsByClassName('talentTreeGlyphModalSearchInput')[0].value.toLowerCase();
+        var rows = self.element.querySelectorAll('.talentTreeGlyphModalTableRow');
+        console.log(rows);
+        Array.prototype.forEach.call(rows, function(row) {
+            var name = row.querySelector('.talentTreeGlyphModalGlyphName a').innerText;
+            var description =  row.querySelector('.talentTreeGlyphModalGlyphDescription').innerText;
+            if ((name + description).toLowerCase().includes(searchText) || row.dataset.itemId == "null") {
+                row.classList.remove('hidden');
+            } else {
+                row.classList.add('hidden');
+            }
+        });
+    }
+
+    clearSearchGlyphModal() {
+        this.element.getElementsByClassName('talentTreeGlyphModalSearchInput')[0].value = '';
+        var hiddenRows = this.element.querySelectorAll('.talentTreeGlyphModalTableRow.hidden');
+        Array.prototype.forEach.call(hiddenRows, function(hiddenRow) {
+            hiddenRow.classList.remove('hidden');
+        });
     }
 
     closeGlyphModal() {
