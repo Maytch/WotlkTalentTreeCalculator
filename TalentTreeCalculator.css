@@ -314,11 +314,6 @@ body {
     background-color: rgba(0, 0, 0, 0.5);
 }
 
-body.talentTreeModalOpen {
-    overflow: hidden;
-    position: fixed;
-}
-
 .talentTreeGlyphModal.hidden {
     opacity: 0;
     display: none;

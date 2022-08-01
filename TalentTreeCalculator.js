@@ -1107,7 +1107,7 @@ class TalentTreeCalculator {
         this.updateGlyphModalList(glyphs, null, null);
         this.glyphModal.classList.remove('hidden');
         
-        document.body.classList.add('talentTreeModalOpen');
+        //document.body.classList.add('talentTreeModalOpen');
     }
 
     updateGlyphModalList(glyphs, nameFilter, sort) {
