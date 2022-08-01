@@ -53,14 +53,15 @@ class TalentTreeHeader {
         talentTreeHeaderLink.addEventListener('click', function(event) {
             var urlString = self.talentTreeCalculator.exportToUrl();
             var url = new URL(self.baseUrl);
+
+            url.searchParams.delete('c');
+            url.searchParams.delete('t');
+            url.searchParams.delete('g');
+
             var params = urlString.split('&');
             params.forEach(function(param) {
                 var split = param.split('=');
-                if (window.location.href.indexOf(split[0] + '=')) {
-                    url.searchParams.set(split[0], split[1]);
-                } else {
-                    url.searchParams.append(split[0], split[1]);
-                }
+                url.searchParams.set(split[0], split[1]);
             });
             navigator.clipboard.writeText(url);
 

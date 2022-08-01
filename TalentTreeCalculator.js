@@ -1254,7 +1254,7 @@ class TalentTreeCalculator {
     exportToUrl() {
         var urlString = '';
 
-        var className = this.userPointHistory[0].split(':')[0];
+        var className = this.className;
         var classKeys = Object.keys(this.talentData);
         urlString += 'c=' + classKeys.indexOf(className);
 
@@ -1339,6 +1339,8 @@ class TalentTreeCalculator {
         var talentString = '';
         var className = Object.keys(this.talentData)[parseInt(params['c'])];
         var i;
+
+        this.buildClass(className);
         
         if (params['t'] != undefined) {
             var compressedTalentString = params['t'];
@@ -1388,8 +1390,6 @@ class TalentTreeCalculator {
                 userSpentPoints[currentSpecName][row][column];
                 userPointHistory.push(key);
             }
-
-            this.buildClass(className);
 
             // Build tables
             Object.keys(userSpentPoints).forEach(function(specName) {
