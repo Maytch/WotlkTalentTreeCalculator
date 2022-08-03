@@ -2,40 +2,98 @@
 
 See example TalentTreeCalculator here: https://matt-hall.com/wotlk/talent-tree-calculator/
 
-See example TalentTreeDataParser here: https://matt-hall.com/wotlk/talent-tree-calculator/TalentTreeDataParser.html
-
-TalentData Spreadsheet here: https://docs.google.com/spreadsheets/d/1OGItB5b16FCRWYVKxPFvBu-RODsIrmC_xuZRTvjaXv4/edit?usp=sharing
 
 ## Initialising the TalentTreeCalculator
 
 - Include the TalentTreeCalculator.js and recommended TalentTreeCalculator.css files
-- Either fetch your TalentData.json or hard code it into your site
 - Create an element that the TalentTreeCalculator can initialise into
-- Initialise the TalentTreeCalculator using your new element, the json data of your talents, and the baseUrl of your image folder
+- Include your classData, talentData, and glyphsData variables
+- Define your imageParams to points to your image folders
+- Initialise the TalentTreeCalculator using the above parameters
 
 Example:
 ```
-var talentTreeCalculator = new TalentTreeCalculator(document.getElementById('test'), jsonData, ".//Images//");
-talentTreeCalculator.buildSpec(0, "deathknight", "blood");
-talentTreeCalculator.buildSpec(1, "deathknight", "frost");
-talentTreeCalculator.buildSpec(2, "deathknight", "unholy");
-talentTreeCalculator.buildGlyphTable("deathknight");
+var imageParams = {
+    icon: "./Images/icons/",
+    iconFormat: "jpg",
+    background: "./Images/backgrounds/",
+    backgroundFormat: "jpg"
+};
+
+var talentTreeCalculator = new TalentTreeCalculator(
+    document.getElementById('talent-tree-calculator'),
+    classData,
+    talentData,
+    glyphsData,
+    imageParams
+);
+
+talentTreeCalculator.buildClass("deathknight");
 ```
+
+
+### Import Talent Build
+
+Using either a url or just the parameters themselves, run the import after initialisation like this:
+
+```
+talentTreeCalculator.importFromUrl(window.location.href);
+```
+
+
+### Lock Talent Build
+
+If you want to use the talent tree in a guide, you can lock the talent calculator after setting it up like this:
+
+```
+talentTreeCalculator.setLock(true);
+```
+
+You can also toggle it on and off using this method.
+
+
+## Initialising the TalentTreeHeader
+
+- Include the TalentTreeHeader.js and recommended TalentTreeHeader.css files
+- Create an element that the TalentTreeHeader can initialise into
+- Initialise the TalentTreeHistory using your new element and the talentTreeCalculator
+- Subscribe to the user point history and user class update events in the talentTreeCalculator so that it updates when the talent tree does
+
+Example:
+```
+var talentTreeHeader = new TalentTreeHeader(document.getElementById('header'), talentTreeCalculator);
+talentTreeCalculator.subscribeToUserPointHistoryUpdateEvent(talentTreeHeader, talentTreeHeader.updateUserPoints);
+talentTreeCalculator.subscribeToUserClassUpdateEvent(talentTreeHeader, talentTreeHeader.updateUserClass);
+```
+
+
+## Initialising the TalentTreeClassSelector
+
+- Include the TalentTreeClassSelector.js and recommended TalentTreeClassSelector.css files
+- Create an element that the TalentTreeClassSelector can initialise into
+- Initialise the TalentTreeClassSelector using your new element and the talentTreeCalculator
+
+Example:
+```
+var talentTreeClassSelector = new TalentTreeClassSelector(document.getElementById('selector'), talentTreeCalculator);
+```
+
 
 ## Initialising the TalentTreeHistory
 
 - Include the TalentTreeHistory.js and recommended TalentTreeHistory.css files
 - Create an element that the TalentTreeHistory can initialise into
-- Initialise the TalentTreeHistory using your new element, the talentTreeCalculator, and the baseUrl of your image folder
+- Initialise the TalentTreeHistory using your new element, the talentTreeCalculator
 - Subscribe to the user point history event in the talentTreeCalculator so that it updates when the talent tree does
 
 Example:
 ```
-var talentTreeHistory = new TalentTreeHistory(document.getElementById('history'), talentTreeCalculator, ".//Images//");
+var talentTreeHistory = new TalentTreeHistory(document.getElementById('history'), talentTreeCalculator);
 talentTreeCalculator.subscribeToUserPointHistoryUpdateEvent(talentTreeHistory, talentTreeHistory.updateUserPointHistory);
 ```
 
-## Generating new json data
+
+## Generating new talent json data
 
 - View/Edit the TalentData Spreadsheet here: https://docs.google.com/spreadsheets/d/1OGItB5b16FCRWYVKxPFvBu-RODsIrmC_xuZRTvjaXv4/edit?usp=sharing
 - Download as CSV
@@ -43,9 +101,7 @@ talentTreeCalculator.subscribeToUserPointHistoryUpdateEvent(talentTreeHistory, t
 - Select CSV To JSON
 - Update your JSON with the new file
 
+
 ## TODO
 
-- Switch Calc by class
-- Export / Import talent trees as a url parameter
-- Talent Point History so you can show the order you spend talent points for tutorial
 - Save / Load your custom named talent builds (localstorage at first, maybe db later)
