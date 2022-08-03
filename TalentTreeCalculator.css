@@ -83,6 +83,10 @@ body {
     }
 }
 
+.talentTreeCalculator {
+    text-align: left;
+}
+
 .talentTreeCalculator .talentTable {
     position: relative;
     display: inline-block;
@@ -307,7 +311,7 @@ body {
     left: 0;
     width: 100%;
     height: 100%;
-    z-index: 100;
+    z-index: 1050;
     overflow-x: hidden;
     overflow-y: auto;
     transition: opacity 0.15s linear;

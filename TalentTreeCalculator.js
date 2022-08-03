@@ -119,9 +119,7 @@ class TalentTreeCalculator {
             });
         }
         
-        Object.keys(this.talentData[this.className]).forEach(function(specName) {
-            self.updateLocks(specName);
-        });
+        this.updateLocks();
     }
 
     buildClass(className) {
@@ -485,7 +483,7 @@ class TalentTreeCalculator {
         this.userPointHistoryUpdateEvent();
 
         this.updateTalentAnchor(talentAnchor, params.rank);
-        this.updateLocks(params.spec);
+        this.updateLocks();
         this.showTooltip(params);
         this.positionTooltipToTalent(params.spec, params.row, params.column);
         this.updateTalentTableHeader(talentAnchor.dataset.spec);
@@ -564,7 +562,7 @@ class TalentTreeCalculator {
 
         params.rank -= 1;
         this.updateTalentAnchor(talentAnchor, params.rank);
-        this.updateLocks(params.spec);
+        this.updateLocks();
         this.showTooltip(params);
         this.positionTooltipToTalent(params.spec, params.row, params.column);
         this.updateTalentTableHeader(params.spec);
@@ -664,7 +662,14 @@ class TalentTreeCalculator {
         talentTablePoints.innerText = '[' + this.getUserSpentPointsInSpec(specName) + ']';
     }
 
-    updateLocks(specName) {
+    updateLocks() {
+        var self = this;
+        Object.keys(this.classData[this.className].specs).forEach(function(specName) {
+            self.updateSpecLocks(specName);
+        });
+    }
+
+    updateSpecLocks(specName) {
         var self = this;
         var talentAnchors = this.element.querySelectorAll('.talentAnchor[data-spec="' + specName + '"]');
         var spentPoints = this.getUserSpentPointsInSpec(specName);
@@ -1417,9 +1422,9 @@ class TalentTreeCalculator {
 
             Object.keys(this.talentData[this.className]).forEach(function(specName) {
                 self.updateTalentTableHeader(specName);
-                self.updateLocks(specName);
             });
 
+            this.updateLocks();
             this.userPointHistoryUpdateEvent();
         }
 

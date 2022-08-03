@@ -12,6 +12,7 @@
     <script type="text/javascript" src=".//TalentTreeHistory.js?v=1.0.6"></script>
     <script type="text/javascript" src=".//TalentTreeClassSelector.js?v=1.0.6"></script>
     <script type="text/javascript" src=".//TalentTreeHeader.js?v=1.0.6"></script>
+    <script type="text/javascript" src=".//TalentTreeProfiles.js?v=1.0.6"></script>
     
     <script type="text/javascript" src="https://wotlk.evowow.com/static/widgets/power.js"></script>
     <script>var aowow_tooltips = { "colorlinks": false, "iconizelinks": true, "renamelinks": false }</script>
@@ -25,11 +26,13 @@
     <link rel="stylesheet" href=".//TalentTreeHistory.css">
     <link rel="stylesheet" href=".//TalentTreeClassSelector.css">
     <link rel="stylesheet" href=".//TalentTreeHeader.css">
+    <link rel="stylesheet" href=".//TalentTreeProfiles.css">
 </head>
 
 <body>
     <div style="max-width: 1216px;">
         <div id="selector"></div>
+        <div id="profiles"></div>
         <div id="header"></div>
         <div id="test"></div>
     </div>
@@ -60,8 +63,12 @@
         talentTreeCalculator.subscribeToUserPointHistoryUpdateEvent(talentTreeHeader, talentTreeHeader.updateUserPoints);
         talentTreeCalculator.subscribeToUserClassUpdateEvent(talentTreeHeader, talentTreeHeader.updateUserClass);
 
+        var talentTreeProfiles = new TalentTreeProfiles(document.getElementById('profiles'), talentTreeCalculator);
+        talentTreeCalculator.subscribeToUserClassUpdateEvent(talentTreeProfiles, talentTreeProfiles.updateUserClass);
+
+        var url = window.location.href;
         talentTreeCalculator.buildClass("deathknight");
-        talentTreeCalculator.importFromUrl(window.location.href);
+        talentTreeCalculator.importFromUrl(url);
     </script>
 </body>
 

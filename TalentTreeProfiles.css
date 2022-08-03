@@ -1,0 +1,74 @@
+.talentTreeProfiles {
+    position: relative;
+    background-color: rgb(25, 25, 25);
+    padding: 20px;
+    text-align: left;
+}
+
+.talentTreeProfiles .talentTreeProfilesContainer {
+    display: flex;
+    color: white;
+    font-size: 16px;
+    font-weight: bolder;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    vertical-align: middle;
+    max-width: 1216px;
+    margin: 0 auto;
+}
+
+.talentTreeProfiles .talentTreeProfileContainer {
+    flex-grow: 1;
+    margin-right: 10px;
+    border-style: dashed;
+    border-width: 1px;
+    border-color: grey;
+    border-radius: 5px;
+    padding: 10px;
+}
+
+.talentTreeProfiles .talentTreeProfileContainer:last-child {
+    margin-right: 0;
+}
+
+.talentTreeProfiles .talentTreeProfileName {
+    position: relative;
+    display: block;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 14px;
+    width: 100%;
+    border: none;
+}
+
+.talentTreeProfiles .talentTreeHeaderButtons {
+    font-size: 14px;
+    vertical-align: middle;
+    margin-right: 10px;
+}
+
+.talentTreeProfiles .talentTreeHeaderButtons.hidden {
+    display: none;
+}
+
+.talentTreeProfiles .talentTreeProfileSave,
+.talentTreeProfiles .talentTreeProfileLoad {
+    position: relative;
+    display: inline-block;
+    color: goldenrod;
+    transition: color 0.5s linear, background-color 0.2s linear;
+    width: 50%;
+    text-align: center;
+    margin-top: 7px;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+.talentTreeProfiles .talentTreeProfileSave:hover,
+.talentTreeProfiles .talentTreeProfileLoad:hover {
+    background-color: rgba(255,255,255,0.1);
+}
+
+.talentTreeProfiles .talentTreeProfileSave.clicked,
+.talentTreeProfiles .talentTreeProfileLoad.clicked {
+    color: greenyellow;
+}

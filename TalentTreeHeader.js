@@ -4,12 +4,16 @@ class TalentTreeHeader {
     baseUrl = window.location.href;
     talentTreeCalculator;
     className;
+    showButtons = false;
+    updateUrl = true;
 
-    constructor(target, talentTreeCalculator, baseUrl) {
+    constructor(target, talentTreeCalculator, baseUrl, showButtons, updateUrl) {
         if (!target) throw 'Could not construct TalentTreeHeader: Element not found';
         this.talentTreeCalculator = talentTreeCalculator;
         this.initTalentTreeHeader(target);
         if (baseUrl != undefined) this.baseUrl = baseUrl;
+        if (showButtons != undefined) this.showButtons = showButtons;
+        if (updateUrl != undefined) this.updateUrl = updateUrl;
     }
 
     initTalentTreeHeader(target) {
@@ -46,24 +50,14 @@ class TalentTreeHeader {
 
         var talentTreeHeaderButtons = talentTreeHeaderContainer.appendChild(document.createElement('div'));
         talentTreeHeaderButtons.classList.add('talentTreeHeaderButtons');
+        if (!this.showButtons) talentTreeHeaderButtons.classList.add('hidden');
 
         var talentTreeHeaderLink = talentTreeHeaderButtons.appendChild(document.createElement('div'));
         talentTreeHeaderLink.classList.add('talentTreeHeaderLink');
         talentTreeHeaderLink.innerText = "Link";
         talentTreeHeaderLink.addEventListener('click', function(event) {
-            var urlString = self.talentTreeCalculator.exportToUrl();
-            var url = new URL(self.baseUrl);
-
-            url.searchParams.delete('c');
-            url.searchParams.delete('t');
-            url.searchParams.delete('g');
-
-            var params = urlString.split('&');
-            params.forEach(function(param) {
-                var split = param.split('=');
-                url.searchParams.set(split[0], split[1]);
-            });
-            navigator.clipboard.writeText(url);
+            var url = self.getUrl();
+            navigator.clipboard.writeText(url.href);
 
             var element = event.target.classList.contains('talentTreeHeaderLink') ? 
                 event.target : 
@@ -123,5 +117,27 @@ class TalentTreeHeader {
         var talentTreeHeaderLevelContainer = this.element.getElementsByClassName('talentTreeHeaderLevelContainer')[0];
         talentTreeHeaderLevelContainer.innerText = "Level " + 
             (9 + userPointHistory.length);
+
+        if (this.updateUrl) {
+            var url = this.getUrl();
+            history.replaceState(null, null, "?"+url.searchParams.toString());
+        }
+    }
+
+    getUrl() {
+        var urlString = this.talentTreeCalculator.exportToUrl();
+        var url = new URL(this.baseUrl);
+
+        url.searchParams.delete('c');
+        url.searchParams.delete('t');
+        url.searchParams.delete('g');
+
+        var params = urlString.split('&');
+        params.forEach(function(param) {
+            var split = param.split('=');
+            url.searchParams.set(split[0], split[1]);
+        });
+
+        return url;
     }
 }
