@@ -61,7 +61,13 @@ You can also toggle it on and off using this method.
 
 Example:
 ```
-var talentTreeHeader = new TalentTreeHeader(document.getElementById('header'), talentTreeCalculator);
+var talentTreeHeader = new TalentTreeHeader(
+    document.getElementById('header'),
+    talentTreeCalculator,
+    baseUrl, // Set a base url different to the current url
+    showButtons, // Shows Link + Import buttons
+    updateUrl // Updates the url when the talent tree changes
+);
 talentTreeCalculator.subscribeToUserPointHistoryUpdateEvent(talentTreeHeader, talentTreeHeader.updateUserPoints);
 talentTreeCalculator.subscribeToUserClassUpdateEvent(talentTreeHeader, talentTreeHeader.updateUserClass);
 ```
@@ -75,7 +81,30 @@ talentTreeCalculator.subscribeToUserClassUpdateEvent(talentTreeHeader, talentTre
 
 Example:
 ```
-var talentTreeClassSelector = new TalentTreeClassSelector(document.getElementById('selector'), talentTreeCalculator);
+var talentTreeClassSelector = new TalentTreeClassSelector(
+    document.getElementById('selector'),
+    talentTreeCalculator
+);
+```
+
+
+## Initialising the TalentTreeProfiles
+
+- Save and Load to localstorage with these profiles!
+- Include the TalentTreeProfiles.js and recommended TalentTreeProfiles.css files
+- Create an element that the TalentTreeProfiles can initialise into
+- Initialise the TalentTreeProfiles using your new element and the talentTreeCalculator
+- Subscribe to the user class update events in the talentTreeCalculator so that it updates when the talent tree does
+
+Example:
+```
+var talentTreeProfiles = new TalentTreeProfiles(
+    document.getElementById('header'),
+    talentTreeCalculator,
+    maxProfiles // Set number of profiles to appear, default is 3
+);
+
+talentTreeCalculator.subscribeToUserClassUpdateEvent(talentTreeProfiles, talentTreeProfiles.updateUserClass);
 ```
 
 
@@ -88,7 +117,11 @@ var talentTreeClassSelector = new TalentTreeClassSelector(document.getElementByI
 
 Example:
 ```
-var talentTreeHistory = new TalentTreeHistory(document.getElementById('history'), talentTreeCalculator);
+var talentTreeHistory = new TalentTreeHistory(
+    document.getElementById('history'),
+    talentTreeCalculator
+);
+
 talentTreeCalculator.subscribeToUserPointHistoryUpdateEvent(talentTreeHistory, talentTreeHistory.updateUserPointHistory);
 ```
 
@@ -100,8 +133,3 @@ talentTreeCalculator.subscribeToUserPointHistoryUpdateEvent(talentTreeHistory, t
 - Open and paste contents of CSV into TalentTreeDataParser here: https://matt-hall.com/wotlk/talent-tree-calculator/TalentTreeDataParser.html
 - Select CSV To JSON
 - Update your JSON with the new file
-
-
-## TODO
-
-- Save / Load your custom named talent builds (localstorage at first, maybe db later)
