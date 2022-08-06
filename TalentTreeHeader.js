@@ -124,6 +124,13 @@ class TalentTreeHeader {
         }
     }
 
+    updateUserGlyphs(userGlyphs) {
+        if (this.updateUrl) {
+            var url = this.getUrl();
+            history.replaceState(null, null, "?"+url.searchParams.toString());
+        }
+    }
+
     getUrl() {
         var urlString = this.talentTreeCalculator.exportToUrl();
         var url = new URL(this.baseUrl);

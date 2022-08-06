@@ -408,6 +408,7 @@ body.talentTreeModalOpen {
 .talentTreeGlyphModal .talentTreeGlyphModalTableRow.locked {
     color: gray;
     background-color: rgba(255,255,255,0.05);
+    cursor: not-allowed;
 }
 
 .talentTreeGlyphModal .talentTreeGlyphModalTableRow.hidden {

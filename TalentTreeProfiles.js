@@ -39,9 +39,13 @@ class TalentTreeProfiles {
         talentTreeProfileContainer.dataset.name = '';
         talentTreeProfileContainer.dataset.params = '';
         
+        var talentTreeProfileHeader = talentTreeProfileContainer.appendChild(document.createElement('div'));
+        talentTreeProfileHeader.classList.add('talentTreeProfileHeader');
+        talentTreeProfileHeader.innerText = "Loaded Profile";
+
         var talentTreeProfileName = talentTreeProfileContainer.appendChild(document.createElement('input'));
         talentTreeProfileName.classList.add('talentTreeProfileName');
-        talentTreeProfileName.placeholder = "Blank Save Profile";
+        talentTreeProfileName.placeholder = "Save Profile Name";
 
         var talentTreeProfileButtons = talentTreeProfileContainer.appendChild(document.createElement('div'));
         talentTreeProfileButtons.classList.add('talentTreeProfileButtons');
@@ -76,7 +80,7 @@ class TalentTreeProfiles {
                 event.target.closest('.talentTreeProfileLoad');
 
             var container = element.closest('.talentTreeProfileContainer');
-            var success = self.loadProfile(container.dataset.params);
+            var success = self.loadProfile(container.dataset.number, container.dataset.params);
             if (success) {
                 element.classList.add('clicked');
                 element.innerText = "Loaded!";
@@ -91,6 +95,7 @@ class TalentTreeProfiles {
     }
 
     updateUserClass(className) {
+        if (this.className == className) return;
         this.className = className;
         this.showProfiles();
     }
@@ -110,11 +115,14 @@ class TalentTreeProfiles {
 
         var name;
         for (var i = 0; i < containers.length; i++) {
+            containers[i].classList.remove('active');
+
             if (classProfiles[i] == undefined) {
-                containers[i].dataset.name = '';
+                var profileName = 'Profile ' + (i + 1);
+                containers[i].dataset.name = profileName;
                 containers[i].dataset.params = '';
                 name = containers[i].getElementsByClassName('talentTreeProfileName')[0];
-                name.value = null;
+                name.value = profileName;
             } else {
                 containers[i].dataset.name = classProfiles[i].name;
                 containers[i].dataset.params = classProfiles[i].params;
@@ -147,14 +155,34 @@ class TalentTreeProfiles {
         container.dataset.number = number;
         container.dataset.name = profileName;
         container.dataset.params = params;
+        
+        var containers = this.element.getElementsByClassName('talentTreeProfileContainer');
+        Array.prototype.forEach.call(containers, function(container) {
+            if (container.dataset.number == number) {
+                container.classList.add('active');
+            } else {
+                container.classList.remove('active');
+            }
+        });
 
         return true;
     }
 
-    loadProfile(params) {
-        if (params.length == 0) return false;
+    loadProfile(number, params) {
+        var containers = this.element.getElementsByClassName('talentTreeProfileContainer');
+        Array.prototype.forEach.call(containers, function(container) {
+            if (container.dataset.number == number) {
+                container.classList.add('active');
+            } else {
+                container.classList.remove('active');
+            }
+        });
 
-        this.talentTreeCalculator.importFromUrl(params);
+        if (params.length == 0) {
+            this.talentTreeCalculator.buildClass(this.className);
+        } else {
+            this.talentTreeCalculator.importFromUrl(params);
+        }
 
         return true;
     }

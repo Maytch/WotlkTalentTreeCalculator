@@ -1131,6 +1131,7 @@ class TalentTreeCalculator {
 
         var glyphRowElement;
         var glyphRowElements = [this.createGlyphModalRowElement(null)];
+        console.log(self.userGlyphs.major);
         Object.values(glyphs).forEach(function (glyphData) {
             if (keyedGlyphRowElements[glyphData.id] != undefined) {
                 glyphRowElement = keyedGlyphRowElements[glyphData.id];
@@ -1138,8 +1139,8 @@ class TalentTreeCalculator {
                 glyphRowElement = self.createGlyphModalRowElement(glyphData);
             }
 
-            if ((self.userGlyphs.major.includes(glyphData.id) ||
-                self.userGlyphs.minor.includes(glyphData.id))) {
+            if ((self.userGlyphs.major.includes(parseInt(glyphData.id)) ||
+                self.userGlyphs.minor.includes(parseInt(glyphData.id)))) {
                 glyphRowElement.classList.add('locked');
             } else {
                 glyphRowElement.classList.remove('locked');

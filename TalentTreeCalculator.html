@@ -61,6 +61,7 @@
 
         var talentTreeHeader = new TalentTreeHeader(document.getElementById('header'), talentTreeCalculator);
         talentTreeCalculator.subscribeToUserPointHistoryUpdateEvent(talentTreeHeader, talentTreeHeader.updateUserPoints);
+        talentTreeCalculator.subscribeToUserGlyphsUpdateEvent(talentTreeHeader, talentTreeHeader.updateUserGlyphs);
         talentTreeCalculator.subscribeToUserClassUpdateEvent(talentTreeHeader, talentTreeHeader.updateUserClass);
 
         var talentTreeProfiles = new TalentTreeProfiles(document.getElementById('profiles'), talentTreeCalculator);

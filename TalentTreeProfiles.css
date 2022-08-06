@@ -26,6 +26,25 @@
     padding: 10px;
 }
 
+.talentTreeProfiles .talentTreeProfileContainer.active {
+    border-style: solid;
+    border-color: goldenrod;
+    
+}
+
+.talentTreeProfiles .talentTreeProfileContainer .talentTreeProfileHeader {
+    color: goldenrod;
+    display: none;
+    position: absolute;
+    top: 7px;
+    background-color: rgb(25, 25, 25);
+    padding: 0 5px;
+}
+
+.talentTreeProfiles .talentTreeProfileContainer.active .talentTreeProfileHeader {
+    display: block;
+}
+
 .talentTreeProfiles .talentTreeProfileContainer:last-child {
     margin-right: 0;
 }
