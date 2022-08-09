@@ -507,25 +507,27 @@ class TalentTreeCalculator {
 
         var i;
         var j;
-        var pointsUpToRow = 0;
-        var pointsAfterRow = 0;
-        var minPoints = 0;
+        var rowPoints = [];
         for (i = 0; i < this.talentData[params.class][params.spec].length; i++) {
             var points = 0;
             for (j = 0; j < this.talentData[params.class][params.spec][i].length; j++) {
                 if (this.userSpentPoints[params.spec][i] != undefined &&
                     this.userSpentPoints[params.spec][i][j] != undefined) {
                     points += this.userSpentPoints[params.spec][i][j];
-                    minPoints = i * 5;
                 }
             }
-            if (i <= params.row) {
-                pointsUpToRow += points;
-            } else {
-                pointsAfterRow += points;
-            }
+            if (points > 0) rowPoints[i] = points;
         }
-        if (pointsAfterRow > 0 && pointsUpToRow - 1 < minPoints) return;
+        
+        // Check that each row fulfills the minimum point check for the next row
+        var nextRowMinPoints = 0;
+        var pointsUpToRow = 0;
+        for (i = 0; i < rowPoints.length - 1; i++) {
+            nextRowMinPoints += 5;
+            pointsUpToRow += (rowPoints[i] == undefined) ? 0 : rowPoints[i];
+            if (i >= params.row &&
+                pointsUpToRow - 1 < nextRowMinPoints) return;
+        }
 
         var canSubtract = true;
         for (i = 0; i < this.talentData[params.class][params.spec].length; i++) {
