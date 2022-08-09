@@ -518,7 +518,7 @@ class TalentTreeCalculator {
             }
             if (points > 0) rowPoints[i] = points;
         }
-        
+
         // Check that each row fulfills the minimum point check for the next row
         var nextRowMinPoints = 0;
         var pointsUpToRow = 0;
@@ -865,7 +865,6 @@ class TalentTreeCalculator {
         if (screen.width < 600) {
             top = talentRect.top - elementRect.top - 10 - tooltipHeight;
             if (top < 0) top = talentRect.bottom - elementRect.top + 20;
-            console.log(top, talentRect.top, tooltipHeight, elementHeight);
             this.tooltip.style.top = top + "px";
             this.tooltip.style.left = left + "px";
             return;
@@ -988,7 +987,6 @@ class TalentTreeCalculator {
     searchGlyphModal(self) {
         var searchText = self.element.getElementsByClassName('talentTreeGlyphModalSearchInput')[0].value.toLowerCase();
         var rows = self.element.querySelectorAll('.talentTreeGlyphModalTableRow');
-        console.log(rows);
         Array.prototype.forEach.call(rows, function(row) {
             var name = row.querySelector('.talentTreeGlyphModalGlyphName a').innerText;
             var description =  row.querySelector('.talentTreeGlyphModalGlyphDescription').innerText;
@@ -1133,7 +1131,7 @@ class TalentTreeCalculator {
 
         var glyphRowElement;
         var glyphRowElements = [this.createGlyphModalRowElement(null)];
-        console.log(self.userGlyphs.major);
+
         Object.values(glyphs).forEach(function (glyphData) {
             if (keyedGlyphRowElements[glyphData.id] != undefined) {
                 glyphRowElement = keyedGlyphRowElements[glyphData.id];
